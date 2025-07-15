@@ -41,7 +41,8 @@ class FileBird_FD_Shortcode_Handler {
             'columns' => 3,
             'class' => '',
             'include_subfolders' => 'false',
-            'group_by_folder' => 'false'
+            'group_by_folder' => 'false',
+            'accordion_default' => 'closed'
         ), $atts, 'filebird_docs');
         
         // Validate folder parameter
@@ -58,6 +59,7 @@ class FileBird_FD_Shortcode_Handler {
         $atts['show_thumbnail'] = filter_var($atts['show_thumbnail'], FILTER_VALIDATE_BOOLEAN);
         $atts['include_subfolders'] = filter_var($atts['include_subfolders'], FILTER_VALIDATE_BOOLEAN);
         $atts['group_by_folder'] = filter_var($atts['group_by_folder'], FILTER_VALIDATE_BOOLEAN);
+        $atts['accordion_default'] = sanitize_text_field($atts['accordion_default']);
         
         // Check if FileBird is available
         if (!FileBird_FD_Helper::isFileBirdAvailable()) {
@@ -261,6 +263,13 @@ class FileBird_FD_Shortcode_Handler {
                 'required' => false,
                 'default' => 'false',
                 'description' => __('Group documents by folder structure (requires include_subfolders)', 'filebird-frontend-docs')
+            ),
+            'accordion_default' => array(
+                'type' => 'string',
+                'required' => false,
+                'default' => 'closed',
+                'options' => array('open', 'closed'),
+                'description' => __('Default state for accordion folders (open or closed)', 'filebird-frontend-docs')
             )
         );
     }

@@ -519,4 +519,102 @@
         break-inside: avoid;
         border-bottom: 1px solid #ccc;
     }
+}
+
+/* Accordion Styles */
+.filebird-docs-accordion-section {
+    margin-bottom: 1rem;
+    border: 1px solid #e1e5e9;
+    border-radius: 8px;
+    overflow: hidden;
+    background: #fff;
+}
+
+.filebird-docs-accordion-header {
+    background: #f8f9fa;
+    border-bottom: 1px solid #e1e5e9;
+}
+
+.filebird-docs-accordion-toggle {
+    width: 100%;
+    padding: 1rem;
+    background: none;
+    border: none;
+    text-align: left;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #333;
+    transition: all 0.3s ease;
+}
+
+.filebird-docs-accordion-toggle:hover {
+    background: #e9ecef;
+}
+
+.filebird-docs-accordion-toggle:focus {
+    outline: 2px solid #007cba;
+    outline-offset: -2px;
+}
+
+.filebird-docs-accordion-icon {
+    width: 12px;
+    height: 12px;
+    position: relative;
+    transition: transform 0.3s ease;
+}
+
+.filebird-docs-accordion-icon::before,
+.filebird-docs-accordion-icon::after {
+    content: '';
+    position: absolute;
+    background: #666;
+    transition: all 0.3s ease;
+}
+
+.filebird-docs-accordion-icon::before {
+    width: 2px;
+    height: 12px;
+    top: 0;
+    left: 5px;
+}
+
+.filebird-docs-accordion-icon::after {
+    width: 12px;
+    height: 2px;
+    top: 5px;
+    left: 0;
+}
+
+.filebird-docs-accordion-toggle[aria-expanded="true"] .filebird-docs-accordion-icon::before {
+    transform: rotate(90deg);
+}
+
+.filebird-docs-accordion-content {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+}
+
+.filebird-docs-accordion-content.filebird-docs-accordion-open {
+    max-height: none;
+}
+
+.filebird-docs-accordion-content > * {
+    padding: 1rem;
+}
+
+/* Responsive Accordion */
+@media (max-width: 768px) {
+    .filebird-docs-accordion-toggle {
+        padding: 0.75rem;
+        font-size: 1rem;
+    }
+    
+    .filebird-docs-accordion-content > * {
+        padding: 0.75rem;
+    }
 } 

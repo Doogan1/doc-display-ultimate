@@ -224,6 +224,15 @@ class FileBird_FD_Admin {
                                                 <?php _e('Group documents by folder structure', 'filebird-frontend-docs'); ?>
                                             </label>
                                             <p class="description"><?php _e('When enabled, documents will be organized by folder with folder names as section headings.', 'filebird-frontend-docs'); ?></p>
+                                            
+                                            <br>
+                                            
+                                            <label for="accordion-default"><?php _e('Accordion Default State', 'filebird-frontend-docs'); ?></label>
+                                            <select id="accordion-default" class="regular-text">
+                                                <option value="closed"><?php _e('Closed (folders collapsed)', 'filebird-frontend-docs'); ?></option>
+                                                <option value="open"><?php _e('Open (folders expanded)', 'filebird-frontend-docs'); ?></option>
+                                            </select>
+                                            <p class="description"><?php _e('Default state for accordion folders when grouping is enabled.', 'filebird-frontend-docs'); ?></p>
                                         </fieldset>
                                     </td>
                                 </tr>
@@ -261,6 +270,12 @@ class FileBird_FD_Admin {
                             
                             <h3><?php _e('Group by Folder Structure', 'filebird-frontend-docs'); ?></h3>
                             <code>[filebird_docs folder="123" include_subfolders="true" group_by_folder="true"]</code>
+                            
+                            <h3><?php _e('Accordion Folders (Default Closed)', 'filebird-frontend-docs'); ?></h3>
+                            <code>[filebird_docs folder="123" include_subfolders="true" group_by_folder="true" accordion_default="closed"]</code>
+                            
+                            <h3><?php _e('Accordion Folders (Default Open)', 'filebird-frontend-docs'); ?></h3>
+                            <code>[filebird_docs folder="123" include_subfolders="true" group_by_folder="true" accordion_default="open"]</code>
                         </div>
                     </div>
                     
