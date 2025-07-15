@@ -32,6 +32,11 @@ class FileBird_FD_Document_Display {
         $options = array();
         
         foreach ($folders as $folder) {
+            // Check if required properties exist
+            if (!isset($folder->id) || !isset($folder->name)) {
+                continue; // Skip folders with missing properties
+            }
+            
             $options[] = array(
                 'id' => $folder->id,
                 'name' => $folder->name,

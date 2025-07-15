@@ -149,7 +149,7 @@ class FileBird_FD_Shortcode_Handler {
         extract($data);
         ?>
         <div class="<?php echo esc_attr($container_classes); ?>">
-            <h3 class="filebird-docs-folder-title"><?php echo esc_html($folder->name); ?></h3>
+            <h3 class="filebird-docs-folder-title"><?php echo esc_html(isset($folder->name) ? $folder->name : __('Documents', 'filebird-frontend-docs')); ?></h3>
             <ul class="filebird-docs-list">
                 <?php foreach ($attachments as $attachment): ?>
                     <li class="filebird-docs-item">

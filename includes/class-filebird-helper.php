@@ -103,6 +103,11 @@ class FileBird_FD_Helper {
             
             // First pass: create map
             foreach ($folders as $folder) {
+                // Check if required properties exist
+                if (!isset($folder->id) || !isset($folder->name) || !isset($folder->parent)) {
+                    continue; // Skip folders with missing properties
+                }
+                
                 $folder_map[$folder->id] = array(
                     'id' => $folder->id,
                     'name' => $folder->name,
@@ -403,7 +408,7 @@ class FileBird_FD_Helper {
             
             while ($current_id > 0) {
                 $folder = \FileBird\Model\Folder::findById($current_id);
-                if ($folder) {
+                if ($folder && isset($folder->name) && isset($folder->parent)) {
                     array_unshift($path, $folder->name);
                     $current_id = $folder->parent;
                 } else {
@@ -446,6 +451,10 @@ class FileBird_FD_Helper {
         }
         
         foreach ($folders as $folder) {
+            // Check if required properties exist
+            if (!isset($folder->id) || !isset($folder->name)) {
+                continue; // Skip folders with missing properties
+            }
             $options[$folder->id] = $folder->name;
         }
         
