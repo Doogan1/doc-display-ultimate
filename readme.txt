@@ -1,5 +1,5 @@
 === FileBird Frontend Documents ===
-Contributors: yourname
+Contributors: Drake Olejniczak
 Tags: filebird, documents, shortcode, media, files, frontend
 Requires at least: 5.0
 Tested up to: 6.4
@@ -24,6 +24,9 @@ FileBird Frontend Documents is a powerful plugin that extends the FileBird media
 * **Accessibility**: Full keyboard navigation and screen reader support
 * **AJAX Support**: Dynamic loading capabilities
 * **Customizable Styling**: Modern CSS with easy customization
+* **Hierarchical Folder Support**: Display folders in a tree structure
+* **Subfolder Integration**: Include documents from subfolders recursively
+* **Folder Grouping**: Organize documents by folder structure with section headings
 
 **Shortcode Usage:**
 
@@ -42,6 +45,8 @@ FileBird Frontend Documents is a powerful plugin that extends the FileBird media
 * `show_date`: true or false (default: false)
 * `show_thumbnail`: true or false (default: true)
 * `class`: Additional CSS classes
+* `include_subfolders`: true or false (default: false) - Include documents from subfolders
+* `group_by_folder`: true or false (default: false) - Group documents by folder structure (requires include_subfolders)
 
 **Examples:**
 
@@ -56,6 +61,12 @@ List layout with file sizes and dates:
 
 Table layout with all information:
 `[filebird_docs folder="123" layout="table" show_size="true" show_date="true" show_thumbnail="true"]`
+
+Include subfolders:
+`[filebird_docs folder="123" include_subfolders="true"]`
+
+Group by folder structure:
+`[filebird_docs folder="123" include_subfolders="true" group_by_folder="true"]`
 
 **Requirements:**
 
@@ -113,6 +124,9 @@ Yes, the plugin includes AJAX functionality for dynamic loading of folders and d
 * Responsive design
 * AJAX support
 * Accessibility features
+* Hierarchical folder display in admin
+* Subfolder recursive loading support
+* Folder grouping with section headings
 
 == Upgrade Notice ==
 

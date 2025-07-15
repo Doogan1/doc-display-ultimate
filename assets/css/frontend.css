@@ -466,6 +466,43 @@
     outline-offset: 2px;
 }
 
+/* Folder Section Styles */
+.filebird-docs-folder-section {
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid #e1e5e9;
+}
+
+.filebird-docs-folder-section:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+}
+
+.filebird-docs-folder-section-title {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #333;
+    margin: 0 0 0.5rem 0;
+    padding: 0.5rem 0;
+    border-bottom: 2px solid #007cba;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.filebird-docs-folder-section-title .filebird-docs-folder-count {
+    font-size: 0.9rem;
+    font-weight: 400;
+    color: #666;
+}
+
+.filebird-docs-folder-path {
+    font-size: 0.9rem;
+    color: #666;
+    margin: 0 0 1rem 0;
+    font-style: italic;
+}
+
 /* Print Styles */
 @media print {
     .filebird-docs-download-btn {
@@ -476,5 +513,10 @@
         break-inside: avoid;
         box-shadow: none;
         border: 1px solid #ccc;
+    }
+    
+    .filebird-docs-folder-section {
+        break-inside: avoid;
+        border-bottom: 1px solid #ccc;
     }
 } 

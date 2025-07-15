@@ -23,7 +23,7 @@
                 FileBirdFDAdmin.Admin.updateShortcode();
             });
 
-            $('#show-title, #show-size, #show-date, #show-thumbnail').on('change', function() {
+            $('#show-title, #show-size, #show-date, #show-thumbnail, #include-subfolders, #group-by-folder').on('change', function() {
                 FileBirdFDAdmin.Admin.updateShortcode();
             });
 
@@ -74,15 +74,19 @@
                 );
             });
 
-            // Populate folders list
+            // Populate folders list with hierarchical display
             var foldersHtml = '<div class="filebird-fd-folders-list">';
             
             if (folders.length === 0) {
                 foldersHtml += '<p>No folders found. Please create folders in FileBird first.</p>';
             } else {
                 folders.forEach(function(folder) {
+                    // Check if this is a subfolder (has dashes in the name)
+                    var isSubfolder = folder.name.indexOf('—') !== -1;
+                    var folderClass = isSubfolder ? 'filebird-fd-folder-hierarchical' : '';
+                    
                     foldersHtml += 
-                        '<div class="filebird-fd-folder-item">' +
+                        '<div class="filebird-fd-folder-item ' + folderClass + '">' +
                             '<div class="filebird-fd-folder-info">' +
                                 '<span class="filebird-fd-folder-name">' + folder.name + '</span>' +
                                 '<span class="filebird-fd-folder-count">' + folder.count + ' documents</span>' +
@@ -107,6 +111,8 @@
             var showSize = $('#show-size').is(':checked');
             var showDate = $('#show-date').is(':checked');
             var showThumbnail = $('#show-thumbnail').is(':checked');
+            var includeSubfolders = $('#include-subfolders').is(':checked');
+            var groupByFolder = $('#group-by-folder').is(':checked');
 
             var shortcode = '[filebird_docs';
 
@@ -150,6 +156,14 @@
 
             if (!showThumbnail) {
                 shortcode += ' show_thumbnail="false"';
+            }
+
+            if (includeSubfolders) {
+                shortcode += ' include_subfolders="true"';
+            }
+
+            if (groupByFolder) {
+                shortcode += ' group_by_folder="true"';
             }
 
             shortcode += ']';

@@ -75,14 +75,14 @@ class FileBird_FD_Admin {
             wp_die(__('Security check failed.', 'filebird-frontend-docs'));
         }
         
-        $folders = FileBird_FD_Helper::getAllFolders();
+        $folders = FileBird_FD_Helper::getHierarchicalFolderOptions();
         $options = array();
         
-        foreach ($folders as $folder) {
+        foreach ($folders as $id => $name) {
             $options[] = array(
-                'id' => $folder->id,
-                'name' => $folder->name,
-                'count' => FileBird_FD_Helper::getAttachmentCountByFolderId($folder->id)
+                'id' => $id,
+                'name' => $name,
+                'count' => $id > 0 ? FileBird_FD_Helper::getAttachmentCountByFolderId($id) : 0
             );
         }
         
@@ -206,6 +206,27 @@ class FileBird_FD_Admin {
                                         <p class="description"><?php _e('Number of documents to display (-1 for all)', 'filebird-frontend-docs'); ?></p>
                                     </td>
                                 </tr>
+                                
+                                <tr>
+                                    <th scope="row"><?php _e('Subfolder Options', 'filebird-frontend-docs'); ?></th>
+                                    <td>
+                                        <fieldset>
+                                            <label>
+                                                <input type="checkbox" id="include-subfolders">
+                                                <?php _e('Include documents from subfolders', 'filebird-frontend-docs'); ?>
+                                            </label>
+                                            <p class="description"><?php _e('When enabled, documents from all subfolders will be included in the display.', 'filebird-frontend-docs'); ?></p>
+                                            
+                                            <br>
+                                            
+                                            <label>
+                                                <input type="checkbox" id="group-by-folder">
+                                                <?php _e('Group documents by folder structure', 'filebird-frontend-docs'); ?>
+                                            </label>
+                                            <p class="description"><?php _e('When enabled, documents will be organized by folder with folder names as section headings.', 'filebird-frontend-docs'); ?></p>
+                                        </fieldset>
+                                    </td>
+                                </tr>
                             </table>
                             
                             <div class="filebird-fd-shortcode-output">
@@ -234,6 +255,12 @@ class FileBird_FD_Admin {
                             
                             <h3><?php _e('Table Layout with All Details', 'filebird-frontend-docs'); ?></h3>
                             <code>[filebird_docs folder="123" layout="table" show_size="true" show_date="true" show_thumbnail="true"]</code>
+                            
+                            <h3><?php _e('Include Subfolders', 'filebird-frontend-docs'); ?></h3>
+                            <code>[filebird_docs folder="123" include_subfolders="true"]</code>
+                            
+                            <h3><?php _e('Group by Folder Structure', 'filebird-frontend-docs'); ?></h3>
+                            <code>[filebird_docs folder="123" include_subfolders="true" group_by_folder="true"]</code>
                         </div>
                     </div>
                     

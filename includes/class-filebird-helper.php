@@ -107,7 +107,8 @@ class FileBird_FD_Helper {
                     'id' => $folder->id,
                     'name' => $folder->name,
                     'parent' => $folder->parent,
-                    'children' => array()
+                    'children' => array(),
+                    'count' => self::getAttachmentCountByFolderId($folder->id)
                 );
             }
             
@@ -126,6 +127,197 @@ class FileBird_FD_Helper {
         } catch (Exception $e) {
             error_log('FileBird Frontend Documents: Error building folder tree - ' . $e->getMessage());
             return array();
+        }
+    }
+
+    /**
+     * Get hierarchical folder options for select dropdown
+     */
+    public static function getHierarchicalFolderOptions($include_all = true, $level = 0) {
+        $tree = self::getFolderTree();
+        $options = array();
+        
+        if ($include_all) {
+            $options[-1] = __('All Folders', 'filebird-frontend-docs');
+        }
+        
+        self::buildHierarchicalOptions($tree, $options, $level);
+        
+        return $options;
+    }
+    
+    /**
+     * Build hierarchical options recursively
+     */
+    private static function buildHierarchicalOptions($folders, &$options, $level = 0) {
+        foreach ($folders as $folder) {
+            $prefix = str_repeat('— ', $level);
+            $options[$folder['id']] = $prefix . $folder['name'] . ' (' . $folder['count'] . ')';
+            
+            if (!empty($folder['children'])) {
+                self::buildHierarchicalOptions($folder['children'], $options, $level + 1);
+            }
+        }
+    }
+
+    /**
+     * Get all subfolder IDs recursively
+     */
+    public static function getSubfolderIds($folder_id) {
+        if (!self::isFileBirdAvailable()) {
+            return array();
+        }
+        
+        try {
+            $subfolder_ids = array();
+            $tree = self::getFolderTree();
+            
+            self::findSubfolderIds($tree, $folder_id, $subfolder_ids);
+            
+            return $subfolder_ids;
+        } catch (Exception $e) {
+            error_log('FileBird Frontend Documents: Error getting subfolder IDs - ' . $e->getMessage());
+            return array();
+        }
+    }
+    
+    /**
+     * Find subfolder IDs recursively
+     */
+    private static function findSubfolderIds($folders, $parent_id, &$subfolder_ids) {
+        foreach ($folders as $folder) {
+            if ($folder['id'] == $parent_id) {
+                // Found the parent, now get all children
+                self::collectSubfolderIds($folder, $subfolder_ids);
+                break;
+            } elseif (!empty($folder['children'])) {
+                self::findSubfolderIds($folder['children'], $parent_id, $subfolder_ids);
+            }
+        }
+    }
+    
+    /**
+     * Collect all subfolder IDs recursively
+     */
+    private static function collectSubfolderIds($folder, &$subfolder_ids) {
+        if (!empty($folder['children'])) {
+            foreach ($folder['children'] as $child) {
+                $subfolder_ids[] = $child['id'];
+                self::collectSubfolderIds($child, $subfolder_ids);
+            }
+        }
+    }
+
+    /**
+     * Get attachments from folder and all subfolders
+     */
+    public static function getAttachmentsByFolderIdRecursive($folder_id, $args = array()) {
+        $defaults = array(
+            'orderby' => 'date',
+            'order' => 'DESC',
+            'limit' => -1,
+            'include_metadata' => true,
+            'include_subfolders' => false,
+            'group_by_folder' => false
+        );
+        
+        $args = wp_parse_args($args, $defaults);
+        
+        if ($args['include_subfolders']) {
+            if ($args['group_by_folder']) {
+                return self::getAttachmentsGroupedByFolder($folder_id, $args);
+            } else {
+                // Get all subfolder IDs including the parent
+                $all_folder_ids = array($folder_id);
+                $subfolder_ids = self::getSubfolderIds($folder_id);
+                $all_folder_ids = array_merge($all_folder_ids, $subfolder_ids);
+                
+                // Get attachments from all folders
+                $all_attachments = array();
+                foreach ($all_folder_ids as $fid) {
+                    $attachments = self::getAttachmentsByFolderId($fid, array(
+                        'orderby' => $args['orderby'],
+                        'order' => $args['order'],
+                        'limit' => -1, // Get all from each folder
+                        'include_metadata' => $args['include_metadata']
+                    ));
+                    $all_attachments = array_merge($all_attachments, $attachments);
+                }
+                
+                // Sort and limit the combined results
+                if ($args['limit'] > 0) {
+                    $all_attachments = array_slice($all_attachments, 0, $args['limit']);
+                }
+                
+                return $all_attachments;
+            }
+        } else {
+            return self::getAttachmentsByFolderId($folder_id, $args);
+        }
+    }
+
+    /**
+     * Get attachments grouped by folder structure
+     */
+    public static function getAttachmentsGroupedByFolder($folder_id, $args = array()) {
+        $tree = self::getFolderTree();
+        $grouped_attachments = array();
+        
+        // Find the target folder in the tree
+        $target_folder = self::findFolderInTree($tree, $folder_id);
+        
+        if ($target_folder) {
+            self::collectFolderAttachments($target_folder, $grouped_attachments, $args);
+        }
+        
+        return $grouped_attachments;
+    }
+    
+    /**
+     * Find a specific folder in the tree
+     */
+    private static function findFolderInTree($folders, $folder_id) {
+        foreach ($folders as $folder) {
+            if ($folder['id'] == $folder_id) {
+                return $folder;
+            }
+            if (!empty($folder['children'])) {
+                $found = self::findFolderInTree($folder['children'], $folder_id);
+                if ($found) {
+                    return $found;
+                }
+            }
+        }
+        return null;
+    }
+    
+    /**
+     * Collect attachments from folder and its children
+     */
+    private static function collectFolderAttachments($folder, &$grouped_attachments, $args) {
+        // Get attachments for current folder
+        $attachments = self::getAttachmentsByFolderId($folder['id'], array(
+            'orderby' => $args['orderby'],
+            'order' => $args['order'],
+            'limit' => -1,
+            'include_metadata' => $args['include_metadata']
+        ));
+        
+        if (!empty($attachments)) {
+            $grouped_attachments[] = array(
+                'folder_id' => $folder['id'],
+                'folder_name' => $folder['name'],
+                'folder_path' => self::getFolderPath($folder['id']),
+                'attachments' => $attachments,
+                'count' => count($attachments)
+            );
+        }
+        
+        // Recursively collect from children
+        if (!empty($folder['children'])) {
+            foreach ($folder['children'] as $child) {
+                self::collectFolderAttachments($child, $grouped_attachments, $args);
+            }
         }
     }
     

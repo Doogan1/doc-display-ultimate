@@ -39,7 +39,9 @@ class FileBird_FD_Shortcode_Handler {
             'show_date' => 'false',
             'show_thumbnail' => 'true',
             'columns' => 3,
-            'class' => ''
+            'class' => '',
+            'include_subfolders' => 'false',
+            'group_by_folder' => 'false'
         ), $atts, 'filebird_docs');
         
         // Validate folder parameter
@@ -54,6 +56,8 @@ class FileBird_FD_Shortcode_Handler {
         $atts['show_size'] = filter_var($atts['show_size'], FILTER_VALIDATE_BOOLEAN);
         $atts['show_date'] = filter_var($atts['show_date'], FILTER_VALIDATE_BOOLEAN);
         $atts['show_thumbnail'] = filter_var($atts['show_thumbnail'], FILTER_VALIDATE_BOOLEAN);
+        $atts['include_subfolders'] = filter_var($atts['include_subfolders'], FILTER_VALIDATE_BOOLEAN);
+        $atts['group_by_folder'] = filter_var($atts['group_by_folder'], FILTER_VALIDATE_BOOLEAN);
         
         // Check if FileBird is available
         if (!FileBird_FD_Helper::isFileBirdAvailable()) {
@@ -67,10 +71,12 @@ class FileBird_FD_Shortcode_Handler {
         }
         
         // Get attachments
-        $attachments = FileBird_FD_Helper::getAttachmentsByFolderId($atts['folder'], array(
+        $attachments = FileBird_FD_Helper::getAttachmentsByFolderIdRecursive($atts['folder'], array(
             'orderby' => $atts['orderby'],
             'order' => $atts['order'],
-            'limit' => $atts['limit']
+            'limit' => $atts['limit'],
+            'include_subfolders' => $atts['include_subfolders'],
+            'group_by_folder' => $atts['group_by_folder']
         ));
         
         if (empty($attachments)) {
@@ -96,7 +102,8 @@ class FileBird_FD_Shortcode_Handler {
             'folder' => $folder,
             'attachments' => $attachments,
             'atts' => $atts,
-            'container_classes' => implode(' ', $container_classes)
+            'container_classes' => implode(' ', $container_classes),
+            'grouped_by_folder' => $atts['group_by_folder'] && $atts['include_subfolders']
         ));
         
         return ob_get_clean();
@@ -106,6 +113,18 @@ class FileBird_FD_Shortcode_Handler {
      * Render the appropriate template
      */
     private function renderTemplate($layout, $data) {
+        // Check if we should use grouped template
+        if ($data['grouped_by_folder']) {
+            $template_path = FB_FD_PLUGIN_PATH . 'templates/document-grouped-' . sanitize_file_name($layout) . '.php';
+            
+            // Check if grouped template exists
+            if (file_exists($template_path)) {
+                include $template_path;
+                return;
+            }
+        }
+        
+        // Use regular template
         $template_path = FB_FD_PLUGIN_PATH . 'templates/document-' . sanitize_file_name($layout) . '.php';
         
         // Check if custom template exists
@@ -230,6 +249,18 @@ class FileBird_FD_Shortcode_Handler {
                 'required' => false,
                 'default' => '',
                 'description' => __('Additional CSS classes', 'filebird-frontend-docs')
+            ),
+            'include_subfolders' => array(
+                'type' => 'boolean',
+                'required' => false,
+                'default' => 'false',
+                'description' => __('Include documents from subfolders', 'filebird-frontend-docs')
+            ),
+            'group_by_folder' => array(
+                'type' => 'boolean',
+                'required' => false,
+                'default' => 'false',
+                'description' => __('Group documents by folder structure (requires include_subfolders)', 'filebird-frontend-docs')
             )
         );
     }

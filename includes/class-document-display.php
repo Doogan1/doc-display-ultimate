@@ -55,10 +55,11 @@ class FileBird_FD_Document_Display {
         $args = array(
             'orderby' => sanitize_text_field($_POST['orderby'] ?? 'date'),
             'order' => sanitize_text_field($_POST['order'] ?? 'DESC'),
-            'limit' => intval($_POST['limit'] ?? -1)
+            'limit' => intval($_POST['limit'] ?? -1),
+            'include_subfolders' => filter_var($_POST['include_subfolders'] ?? false, FILTER_VALIDATE_BOOLEAN)
         );
         
-        $attachments = FileBird_FD_Helper::getAttachmentsByFolderId($folder_id, $args);
+        $attachments = FileBird_FD_Helper::getAttachmentsByFolderIdRecursive($folder_id, $args);
         $documents = array();
         
         foreach ($attachments as $attachment) {
