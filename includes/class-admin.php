@@ -40,6 +40,9 @@ class FileBird_FD_Admin {
             return;
         }
         
+        // Enqueue WordPress dashicons for folder tree icons
+        wp_enqueue_style('dashicons');
+        
         wp_enqueue_style(
             'filebird-frontend-docs-admin',
             FB_FD_PLUGIN_URL . 'assets/css/admin.css',
@@ -75,18 +78,9 @@ class FileBird_FD_Admin {
             wp_die(__('Security check failed.', 'filebird-frontend-docs'));
         }
         
-        $folders = FileBird_FD_Helper::getHierarchicalFolderOptions();
-        $options = array();
+        $folders_tree = FileBird_FD_Helper::getFolderTree();
         
-        foreach ($folders as $id => $name) {
-            $options[] = array(
-                'id' => $id,
-                'name' => $name,
-                'count' => $id > 0 ? FileBird_FD_Helper::getAttachmentCountByFolderId($id) : 0
-            );
-        }
-        
-        wp_send_json_success($options);
+        wp_send_json_success($folders_tree);
     }
     
     /**
@@ -112,13 +106,36 @@ class FileBird_FD_Admin {
                             <table class="form-table">
                                 <tr>
                                     <th scope="row">
-                                        <label for="folder-select"><?php _e('Select Folder', 'filebird-frontend-docs'); ?></label>
+                                        <label for="folder-selector"><?php _e('Select Folder', 'filebird-frontend-docs'); ?></label>
                                     </th>
                                     <td>
-                                        <select id="folder-select" class="regular-text">
-                                            <option value=""><?php _e('Loading folders...', 'filebird-frontend-docs'); ?></option>
-                                        </select>
-                                        <p class="description"><?php _e('Choose a FileBird folder to display its documents.', 'filebird-frontend-docs'); ?></p>
+                                        <div class="filebird-fd-folder-selector">
+                                            <div class="filebird-fd-folder-tree-container">
+                                                <div class="filebird-fd-folder-tree-header">
+                                                    <input type="text" id="folder-search" placeholder="<?php _e('Search folders...', 'filebird-frontend-docs'); ?>" class="regular-text">
+                                                    <button type="button" id="expand-all-folders" class="button button-small">
+                                                        <?php _e('Expand All', 'filebird-frontend-docs'); ?>
+                                                    </button>
+                                                    <button type="button" id="collapse-all-folders" class="button button-small">
+                                                        <?php _e('Collapse All', 'filebird-frontend-docs'); ?>
+                                                    </button>
+                                                </div>
+                                                <div id="folder-tree" class="filebird-fd-folder-tree">
+                                                    <div class="filebird-fd-loading">
+                                                        <span class="spinner is-active"></span>
+                                                        <?php _e('Loading folders...', 'filebird-frontend-docs'); ?>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="filebird-fd-selected-folder">
+                                                <label><?php _e('Selected Folder:', 'filebird-frontend-docs'); ?></label>
+                                                <div id="selected-folder-display">
+                                                    <span class="no-folder-selected"><?php _e('No folder selected', 'filebird-frontend-docs'); ?></span>
+                                                </div>
+                                                <input type="hidden" id="selected-folder-id" value="">
+                                            </div>
+                                        </div>
+                                        <p class="description"><?php _e('Click on a folder to select it for the shortcode.', 'filebird-frontend-docs'); ?></p>
                                     </td>
                                 </tr>
                                 
@@ -276,13 +293,6 @@ class FileBird_FD_Admin {
                             
                             <h3><?php _e('Accordion Folders (Default Open)', 'filebird-frontend-docs'); ?></h3>
                             <code>[filebird_docs folder="123" include_subfolders="true" group_by_folder="true" accordion_default="open"]</code>
-                        </div>
-                    </div>
-                    
-                    <div class="filebird-fd-admin-section">
-                        <h2><?php _e('Available Folders', 'filebird-frontend-docs'); ?></h2>
-                        <div id="folders-list">
-                            <p><?php _e('Loading folders...', 'filebird-frontend-docs'); ?></p>
                         </div>
                     </div>
                 </div>
