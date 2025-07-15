@@ -27,6 +27,7 @@ FileBird Frontend Documents is a powerful plugin that extends the FileBird media
 * **Hierarchical Folder Support**: Display folders in a tree structure
 * **Subfolder Integration**: Include documents from subfolders recursively
 * **Folder Grouping**: Organize documents by folder structure with section headings
+* **Accordion Folders**: Collapsible folder sections with smooth animations
 
 **Shortcode Usage:**
 
@@ -47,6 +48,7 @@ FileBird Frontend Documents is a powerful plugin that extends the FileBird media
 * `class`: Additional CSS classes
 * `include_subfolders`: true or false (default: false) - Include documents from subfolders
 * `group_by_folder`: true or false (default: false) - Group documents by folder structure (requires include_subfolders)
+* `accordion_default`: open or closed (default: closed) - Default state for accordion folders
 
 **Examples:**
 
@@ -67,6 +69,12 @@ Include subfolders:
 
 Group by folder structure:
 `[filebird_docs folder="123" include_subfolders="true" group_by_folder="true"]`
+
+With accordion folders (default closed):
+`[filebird_docs folder="123" include_subfolders="true" group_by_folder="true" accordion_default="closed"]`
+
+With accordion folders (default open):
+`[filebird_docs folder="123" include_subfolders="true" group_by_folder="true" accordion_default="open"]`
 
 **Requirements:**
 

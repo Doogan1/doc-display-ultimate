@@ -23,7 +23,7 @@
                 FileBirdFDAdmin.Admin.updateShortcode();
             });
 
-            $('#show-title, #show-size, #show-date, #show-thumbnail, #include-subfolders, #group-by-folder').on('change', function() {
+            $('#show-title, #show-size, #show-date, #show-thumbnail, #include-subfolders, #group-by-folder, #accordion-default').on('change', function() {
                 FileBirdFDAdmin.Admin.updateShortcode();
             });
 
@@ -113,6 +113,7 @@
             var showThumbnail = $('#show-thumbnail').is(':checked');
             var includeSubfolders = $('#include-subfolders').is(':checked');
             var groupByFolder = $('#group-by-folder').is(':checked');
+            var accordionDefault = $('#accordion-default').val();
 
             var shortcode = '[filebird_docs';
 
@@ -164,6 +165,10 @@
 
             if (groupByFolder) {
                 shortcode += ' group_by_folder="true"';
+            }
+
+            if (accordionDefault && accordionDefault !== 'closed') {
+                shortcode += ' accordion_default="' + accordionDefault + '"';
             }
 
             shortcode += ']';

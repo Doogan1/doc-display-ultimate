@@ -18,6 +18,25 @@
         },
 
         bindEvents: function() {
+            // Accordion functionality
+            $(document).on('click', '.filebird-docs-accordion-toggle', function(e) {
+                e.preventDefault();
+                var $toggle = $(this);
+                var $section = $toggle.closest('.filebird-docs-accordion-section');
+                var $content = $section.find('.filebird-docs-accordion-content');
+                var isExpanded = $toggle.attr('aria-expanded') === 'true';
+                
+                // Toggle aria-expanded
+                $toggle.attr('aria-expanded', !isExpanded);
+                
+                // Toggle content visibility
+                if (isExpanded) {
+                    $content.removeClass('filebird-docs-accordion-open');
+                } else {
+                    $content.addClass('filebird-docs-accordion-open');
+                }
+            });
+
             // Download button enhancements
             $(document).on('click', '.filebird-docs-download-btn', function(e) {
                 // Add download tracking if needed
@@ -55,6 +74,14 @@
 
             // Keyboard navigation
             $(document).on('keydown', '.filebird-docs-link', function(e) {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    $(this).click();
+                }
+            });
+
+            // Accordion keyboard navigation
+            $(document).on('keydown', '.filebird-docs-accordion-toggle', function(e) {
                 if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault();
                     $(this).click();

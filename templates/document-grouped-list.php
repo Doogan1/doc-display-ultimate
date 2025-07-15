@@ -23,17 +23,23 @@ extract($data);
     
     <?php if (!empty($attachments) && is_array($attachments)): ?>
         <?php foreach ($attachments as $folder_group): ?>
-            <div class="filebird-docs-folder-section">
-                <h4 class="filebird-docs-folder-section-title">
-                    <?php echo esc_html($folder_group['folder_name']); ?>
-                    <span class="filebird-docs-folder-count">(<?php echo $folder_group['count']; ?> <?php _e('documents', 'filebird-frontend-docs'); ?>)</span>
-                </h4>
+            <div class="filebird-docs-folder-section filebird-docs-accordion-section">
+                <div class="filebird-docs-accordion-header" data-folder-id="<?php echo esc_attr($folder_group['folder_id']); ?>">
+                    <h4 class="filebird-docs-folder-section-title">
+                        <button class="filebird-docs-accordion-toggle" aria-expanded="<?php echo ($atts['accordion_default'] === 'open') ? 'true' : 'false'; ?>">
+                            <span class="filebird-docs-accordion-icon"></span>
+                            <?php echo esc_html($folder_group['folder_name']); ?>
+                            <span class="filebird-docs-folder-count">(<?php echo $folder_group['count']; ?> <?php _e('documents', 'filebird-frontend-docs'); ?>)</span>
+                        </button>
+                    </h4>
+                    
+                    <?php if (!empty($folder_group['folder_path']) && $folder_group['folder_path'] !== $folder_group['folder_name']): ?>
+                        <p class="filebird-docs-folder-path"><?php echo esc_html($folder_group['folder_path']); ?></p>
+                    <?php endif; ?>
+                </div>
                 
-                <?php if (!empty($folder_group['folder_path']) && $folder_group['folder_path'] !== $folder_group['folder_name']): ?>
-                    <p class="filebird-docs-folder-path"><?php echo esc_html($folder_group['folder_path']); ?></p>
-                <?php endif; ?>
-                
-                <div class="filebird-docs-list">
+                <div class="filebird-docs-accordion-content <?php echo ($atts['accordion_default'] === 'open') ? 'filebird-docs-accordion-open' : ''; ?>">
+                    <div class="filebird-docs-list">
                     <?php foreach ($folder_group['attachments'] as $attachment): ?>
                         <div class="filebird-docs-list-item">
                             <div class="filebird-docs-list-content">
@@ -95,6 +101,7 @@ extract($data);
                             </div>
                         </div>
                     <?php endforeach; ?>
+                </div>
                 </div>
             </div>
         <?php endforeach; ?>
