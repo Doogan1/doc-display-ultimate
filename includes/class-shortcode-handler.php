@@ -43,6 +43,7 @@ class FileBird_FD_Shortcode_Handler {
             'include_subfolders' => 'false',
             'group_by_folder' => 'false',
             'accordion_default' => 'closed',
+            'accordion_states' => '',
             'exclude_folders' => ''
         ), $atts, 'filebird_docs');
         
@@ -66,6 +67,22 @@ class FileBird_FD_Shortcode_Handler {
         $exclude_folders = array();
         if (!empty($atts['exclude_folders'])) {
             $exclude_folders = array_map('intval', explode(',', $atts['exclude_folders']));
+        }
+        
+        // Parse accordion_states attribute
+        $accordion_states = array();
+        if (!empty($atts['accordion_states'])) {
+            $states_array = explode(',', $atts['accordion_states']);
+            foreach ($states_array as $state_item) {
+                $parts = explode(':', trim($state_item));
+                if (count($parts) === 2) {
+                    $folder_id = intval($parts[0]);
+                    $state = sanitize_text_field($parts[1]);
+                    if ($state === 'open' || $state === 'closed') {
+                        $accordion_states[$folder_id] = $state;
+                    }
+                }
+            }
         }
         
         // Check if FileBird is available
@@ -113,7 +130,8 @@ class FileBird_FD_Shortcode_Handler {
             'attachments' => $attachments,
             'atts' => $atts,
             'container_classes' => implode(' ', $container_classes),
-            'grouped_by_folder' => $atts['group_by_folder'] && $atts['include_subfolders']
+            'grouped_by_folder' => $atts['group_by_folder'] && $atts['include_subfolders'],
+            'accordion_states' => $accordion_states
         ));
         
         return ob_get_clean();
@@ -278,6 +296,12 @@ class FileBird_FD_Shortcode_Handler {
                 'default' => 'closed',
                 'options' => array('open', 'closed'),
                 'description' => __('Default state for accordion folders (open or closed)', 'filebird-frontend-docs')
+            ),
+            'accordion_states' => array(
+                'type' => 'string',
+                'required' => false,
+                'default' => '',
+                'description' => __('Comma-separated list of folder IDs and their default states (e.g., "1:open,2:closed")', 'filebird-frontend-docs')
             ),
             'exclude_folders' => array(
                 'type' => 'string',

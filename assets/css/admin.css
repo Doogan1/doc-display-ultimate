@@ -445,3 +445,132 @@
         margin-bottom: 5px;
     }
 } 
+
+/* Accordion State Controls Styles */
+#accordion-state-controls {
+    margin-top: 20px;
+    padding: 15px;
+    background: #f9f9f9;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+#accordion-state-controls label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 10px;
+    color: #23282d;
+}
+
+#accordion-state-controls .description {
+    margin-bottom: 15px;
+    color: #666;
+    font-style: italic;
+}
+
+#accordion-state-list {
+    max-height: 300px;
+    overflow-y: auto;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+    background: #fff;
+    padding: 10px;
+    margin-bottom: 15px;
+}
+
+.accordion-state-item {
+    margin-bottom: 10px;
+    padding: 8px;
+    border: 1px solid #e5e5e5;
+    border-radius: 3px;
+    background: #fafafa;
+}
+
+.accordion-state-item:last-child {
+    margin-bottom: 0;
+}
+
+.accordion-state-content {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+}
+
+.accordion-state-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+    color: #666;
+    transition: color 0.2s ease;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.accordion-state-toggle:hover {
+    color: #0073aa;
+}
+
+.accordion-state-toggle-empty {
+    width: 16px;
+    height: 16px;
+    display: inline-block;
+    flex-shrink: 0;
+}
+
+.accordion-state-children {
+    margin-left: 24px;
+    margin-top: 10px;
+    padding-left: 10px;
+    border-left: 2px solid #e5e5e5;
+}
+
+.accordion-state-children .accordion-state-item {
+    margin-bottom: 8px;
+}
+
+.accordion-state-children .accordion-state-children {
+    margin-left: 20px;
+}
+
+.accordion-state-controls {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.accordion-state-controls label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: normal;
+    margin-bottom: 0;
+    padding: 4px 8px;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.accordion-state-controls label:hover {
+    background-color: #f0f0f1;
+}
+
+.accordion-state-controls input[type="radio"] {
+    margin: 0;
+}
+
+.filebird-fd-accordion-state-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.filebird-fd-accordion-state-actions .button {
+    font-size: 12px;
+    padding: 4px 8px;
+    height: auto;
+    line-height: 1.4;
+} 

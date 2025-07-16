@@ -15,6 +15,7 @@
         selectedFolderName: null,
         folderTree: null,
         excludedSubfolders: [],
+        accordionStates: {},
 
         init: function() {
             this.loadFolders();
@@ -54,6 +55,13 @@
                 FileBirdFDAdmin.Admin.toggleSubfolder($(this));
             });
 
+            // Accordion state toggle events
+            $(document).on('click', '.accordion-state-toggle', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                FileBirdFDAdmin.Admin.toggleAccordionState($(this));
+            });
+
             // Check/Uncheck all subfolders
             $('#check-all-subfolders').on('click', function() {
                 FileBirdFDAdmin.Admin.checkAllSubfolders();
@@ -70,6 +78,29 @@
 
             $('#collapse-all-subfolders').on('click', function() {
                 FileBirdFDAdmin.Admin.collapseAllSubfolders();
+            });
+
+            // Accordion state control events
+            $(document).on('change', '.accordion-state-radio', function() {
+                FileBirdFDAdmin.Admin.updateAccordionStates();
+            });
+
+            // Open/Close all accordions
+            $('#open-all-accordions').on('click', function() {
+                FileBirdFDAdmin.Admin.openAllAccordions();
+            });
+
+            $('#close-all-accordions').on('click', function() {
+                FileBirdFDAdmin.Admin.closeAllAccordions();
+            });
+
+            // Expand/Collapse all accordion state controls
+            $('#expand-all-accordion-states').on('click', function() {
+                FileBirdFDAdmin.Admin.expandAllAccordionStates();
+            });
+
+            $('#collapse-all-accordion-states').on('click', function() {
+                FileBirdFDAdmin.Admin.collapseAllAccordionStates();
             });
 
             // Search functionality
@@ -93,6 +124,15 @@
 
             $('#show-title, #show-size, #show-date, #show-thumbnail, #include-subfolders, #group-by-folder, #accordion-default').on('change', function() {
                 FileBirdFDAdmin.Admin.updateShortcode();
+            });
+
+            // Show/hide accordion state controls based on group-by-folder setting
+            $('#group-by-folder').on('change', function() {
+                if ($(this).is(':checked') && FileBirdFDAdmin.Admin.selectedFolderId) {
+                    $('#accordion-state-controls').show();
+                } else {
+                    $('#accordion-state-controls').hide();
+                }
             });
 
             // Copy shortcode button
@@ -207,6 +247,11 @@
             // Populate subfolders if they exist
             this.populateSubfolders(folderId);
             
+            // Show accordion state controls if group-by-folder is enabled
+            if ($('#group-by-folder').is(':checked')) {
+                $('#accordion-state-controls').show();
+            }
+            
             // Update shortcode
             this.updateShortcode();
         },
@@ -222,9 +267,31 @@
                 
                 // Initialize excluded subfolders
                 this.updateExcludedSubfolders();
+                
+                // Also populate accordion state controls
+                this.populateAccordionStateControls(folderId);
             } else {
                 $('#subfolder-controls').hide();
+                $('#accordion-state-controls').hide();
                 this.excludedSubfolders = [];
+                this.accordionStates = {};
+            }
+        },
+
+        populateAccordionStateControls: function(folderId) {
+            var subfolders = this.findSubfoldersHierarchical(folderId);
+            
+            if (subfolders.length > 0) {
+                var html = this.buildNestedAccordionStateHtml(subfolders);
+                
+                $('#accordion-state-list').html(html);
+                $('#accordion-state-controls').show();
+                
+                // Initialize accordion states
+                this.updateAccordionStates();
+            } else {
+                $('#accordion-state-controls').hide();
+                this.accordionStates = {};
             }
         },
 
@@ -285,6 +352,36 @@
             return html;
         },
 
+        buildNestedAccordionStateHtml: function(subfolders, level = 0) {
+            var html = '';
+            
+            subfolders.forEach(function(subfolder) {
+                var hasChildren = subfolder.children && subfolder.children.length > 0;
+                var folderClass = 'accordion-state-item';
+                var toggleClass = hasChildren ? 'accordion-state-toggle' : 'accordion-state-toggle-empty';
+                var toggleIcon = hasChildren ? 'dashicons-arrow-right-alt2' : 'dashicons-arrow-right-alt2';
+                
+                html += '<div class="' + folderClass + '" data-level="' + level + '">';
+                html += '<div class="accordion-state-content">';
+                html += '<span class="' + toggleClass + '"><span class="dashicons ' + toggleIcon + '"></span></span>';
+                html += '<div class="accordion-state-controls">';
+                html += '<label><input type="radio" class="accordion-state-radio" name="accordion_state_' + subfolder.id + '" value="' + subfolder.id + '_open" checked> ' + this.escapeHtml(subfolder.name) + ' - Open</label>';
+                html += '<label><input type="radio" class="accordion-state-radio" name="accordion_state_' + subfolder.id + '" value="' + subfolder.id + '_closed"> ' + this.escapeHtml(subfolder.name) + ' - Closed</label>';
+                html += '</div>';
+                html += '</div>';
+                
+                if (hasChildren) {
+                    html += '<div class="accordion-state-children" style="display: none;">';
+                    html += this.buildNestedAccordionStateHtml(subfolder.children, level + 1);
+                    html += '</div>';
+                }
+                
+                html += '</div>';
+            }.bind(this));
+            
+            return html;
+        },
+
         toggleFolder: function($toggle) {
             var $folderItem = $toggle.closest('.filebird-fd-folder-item');
             var $children = $folderItem.find('> .filebird-fd-folder-children');
@@ -304,6 +401,22 @@
         toggleSubfolder: function($toggle) {
             var $subfolderItem = $toggle.closest('.subfolder-item');
             var $children = $subfolderItem.find('.subfolder-children');
+            var $icon = $toggle.find('.dashicons');
+            
+            if ($children.length > 0) {
+                if ($children.is(':visible')) {
+                    $children.slideUp(200);
+                    $icon.removeClass('dashicons-arrow-down-alt2').addClass('dashicons-arrow-right-alt2');
+                } else {
+                    $children.slideDown(200);
+                    $icon.removeClass('dashicons-arrow-right-alt2').addClass('dashicons-arrow-down-alt2');
+                }
+            }
+        },
+
+        toggleAccordionState: function($toggle) {
+            var $accordionStateItem = $toggle.closest('.accordion-state-item');
+            var $children = $accordionStateItem.find('.accordion-state-children');
             var $icon = $toggle.find('.dashicons');
             
             if ($children.length > 0) {
@@ -426,6 +539,20 @@
                 shortcode += ' exclude_folders="' + this.excludedSubfolders.join(',') + '"';
             }
 
+            // Add accordion_states attribute if there are custom accordion states
+            if (Object.keys(this.accordionStates).length > 0) {
+                var accordionStatesArray = [];
+                for (var folderId in this.accordionStates) {
+                    if (this.accordionStates.hasOwnProperty(folderId)) {
+                        var state = this.accordionStates[folderId] ? 'open' : 'closed';
+                        accordionStatesArray.push(folderId + ':' + state);
+                    }
+                }
+                if (accordionStatesArray.length > 0) {
+                    shortcode += ' accordion_states="' + accordionStatesArray.join(',') + '"';
+                }
+            }
+
             shortcode += ']';
 
             $('#shortcode-output').text(shortcode);
@@ -466,9 +593,11 @@
             this.selectedFolderId = null;
             this.selectedFolderName = null;
             this.excludedSubfolders = [];
+            this.accordionStates = {};
             $('#selected-folder-id').val('');
             $('#selected-folder-display').html('<span class="no-folder-selected">No folder selected</span>');
             $('#subfolder-controls').hide();
+            $('#accordion-state-controls').hide();
             this.updateShortcode();
         },
 
@@ -498,6 +627,40 @@
         collapseAllSubfolders: function() {
             $('.subfolder-children').slideUp(200);
             $('.subfolder-toggle .dashicons').removeClass('dashicons-arrow-down-alt2').addClass('dashicons-arrow-right-alt2');
+        },
+
+        updateAccordionStates: function() {
+            this.accordionStates = {};
+            $('.accordion-state-radio:checked').each(function() {
+                var value = $(this).val();
+                var parts = value.split('_');
+                if (parts.length === 2) {
+                    var folderId = parts[0];
+                    var state = parts[1];
+                    FileBirdFDAdmin.Admin.accordionStates[folderId] = (state === 'open');
+                }
+            });
+            this.updateShortcode();
+        },
+
+        openAllAccordions: function() {
+            $('.accordion-state-radio').prop('checked', true);
+            this.updateAccordionStates();
+        },
+
+        closeAllAccordions: function() {
+            $('.accordion-state-radio').prop('checked', false);
+            this.updateAccordionStates();
+        },
+
+        expandAllAccordionStates: function() {
+            $('.accordion-state-radio').prop('checked', true);
+            this.updateAccordionStates();
+        },
+
+        collapseAllAccordionStates: function() {
+            $('.accordion-state-radio').prop('checked', false);
+            this.updateAccordionStates();
         }
     };
 

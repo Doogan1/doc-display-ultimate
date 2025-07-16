@@ -16,10 +16,19 @@ extract($data);
 /**
  * Recursively render folder groups
  */
-function renderFolderGroups($folder_groups, $atts, $level = 0) {
+function renderFolderGroups($folder_groups, $atts, $level = 0, $accordion_states = array()) {
     foreach ($folder_groups as $folder_group) {
         $has_children = !empty($folder_group['children']);
-        $is_open = $atts['accordion_default'] === 'open';
+        
+        // Determine if this folder should be open by default
+        $is_open = false;
+        if (isset($accordion_states[$folder_group['folder_id']])) {
+            $is_open = ($accordion_states[$folder_group['folder_id']] === 'open');
+        } else {
+            // Fallback to global accordion_default
+            $is_open = $atts['accordion_default'] === 'open';
+        }
+        
         ?>
         <div class="filebird-docs-folder-section filebird-docs-accordion-section" data-level="<?php echo $level; ?>">
             <div class="filebird-docs-accordion-header" data-folder-id="<?php echo esc_attr($folder_group['folder_id']); ?>">
@@ -105,7 +114,7 @@ function renderFolderGroups($folder_groups, $atts, $level = 0) {
                 
                 <?php if (!empty($folder_group['children'])): ?>
                     <div class="filebird-docs-nested-folders">
-                        <?php renderFolderGroups($folder_group['children'], $atts, $level + 1); ?>
+                        <?php renderFolderGroups($folder_group['children'], $atts, $level + 1, $accordion_states); ?>
                     </div>
                 <?php endif; ?>
             </div>
@@ -123,7 +132,7 @@ function renderFolderGroups($folder_groups, $atts, $level = 0) {
     <?php endif; ?>
     
     <?php if (!empty($attachments) && is_array($attachments)): ?>
-        <?php renderFolderGroups($attachments, $atts); ?>
+        <?php renderFolderGroups($attachments, $atts, 0, $accordion_states); ?>
     <?php else: ?>
         <div class="filebird-docs-empty">
             <p><?php _e('No documents found in this folder.', 'filebird-frontend-docs'); ?></p>

@@ -23,6 +23,7 @@
 - **Admin folder selector**: Tree-based folder selector in admin interface
 - **Subfolder exclusion**: Exclude specific subfolders from display
 - **Accordion folders**: Collapsible folder sections with smooth animations
+- **Granular accordion control**: Select which folders should be open or closed by default
 - **File type icons**: Visual indicators for different file types
 - **Download tracking**: Enhanced download buttons with visual feedback
 - **AJAX support**: Dynamic loading capabilities
@@ -99,6 +100,7 @@ doc-display-ultimate/
 - `include_subfolders`: true or false (default: false)
 - `group_by_folder`: true or false (default: false)
 - `accordion_default`: open or closed (default: closed)
+- `accordion_states`: Comma-separated list of folder IDs and their states (e.g., "1:open,2:closed")
 - `exclude_folders`: Comma-separated folder IDs to exclude
 
 ### Advanced Examples
@@ -111,6 +113,9 @@ doc-display-ultimate/
 
 # Exclude specific subfolders
 [filebird_docs folder="123" include_subfolders="true" exclude_folders="456,789"]
+
+# Granular accordion control
+[filebird_docs folder="123" include_subfolders="true" group_by_folder="true" accordion_states="456:open,789:closed"]
 ```
 
 ## Template System
@@ -181,6 +186,12 @@ $folder_group = [
 - **Nested display**: Hierarchical subfolder structure
 - **Shortcode generation**: Automatic shortcode attribute updates
 
+### Accordion State Control
+- **Radio button interface**: Select which folders should be open or closed by default
+- **Bulk operations**: Open all/close all functionality
+- **Nested display**: Hierarchical folder structure with state controls
+- **Shortcode generation**: Automatic accordion_states attribute updates
+
 ## CSS Architecture
 
 ### Core Classes
@@ -215,7 +226,12 @@ $folder_group = [
 
 ## Recent Major Updates
 
-### Nested Accordion Fix (Latest)
+### Granular Accordion Control (Latest)
+- **Feature**: Allow users to control which folders are open or closed by default
+- **Implementation**: New accordion_states shortcode attribute and admin interface
+- **Benefit**: More precise control over accordion behavior for better user experience
+
+### Nested Accordion Fix (Previous)
 - **Issue**: Nested accordions showing content when closed
 - **Solution**: Enhanced JavaScript logic and CSS rules
 - **Result**: Proper state management for nested accordions

@@ -155,6 +155,28 @@ class FileBird_FD_Admin {
                                                         </button>
                                                     </div>
                                                 </div>
+                                                
+                                                <div id="accordion-state-controls" style="display: none;">
+                                                    <label><?php _e('Accordion State Control:', 'filebird-frontend-docs'); ?></label>
+                                                    <p class="description"><?php _e('Select which folders should be open or closed by default when grouping is enabled. This provides granular control over the accordion behavior.', 'filebird-frontend-docs'); ?></p>
+                                                    <div id="accordion-state-list">
+                                                        <!-- Accordion state controls will be populated here -->
+                                                    </div>
+                                                    <div class="filebird-fd-accordion-state-actions">
+                                                        <button type="button" id="open-all-accordions" class="button button-small">
+                                                            <?php _e('Open All', 'filebird-frontend-docs'); ?>
+                                                        </button>
+                                                        <button type="button" id="close-all-accordions" class="button button-small">
+                                                            <?php _e('Close All', 'filebird-frontend-docs'); ?>
+                                                        </button>
+                                                        <button type="button" id="expand-all-accordion-states" class="button button-small">
+                                                            <?php _e('Expand All', 'filebird-frontend-docs'); ?>
+                                                        </button>
+                                                        <button type="button" id="collapse-all-accordion-states" class="button button-small">
+                                                            <?php _e('Collapse All', 'filebird-frontend-docs'); ?>
+                                                        </button>
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
                                         <p class="description"><?php _e('Click on a folder to select it for the shortcode.', 'filebird-frontend-docs'); ?></p>
