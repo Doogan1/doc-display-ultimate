@@ -36,7 +36,6 @@ function renderFolderGroups($folder_groups, $atts, $level = 0, $accordion_states
                     <button class="filebird-docs-accordion-toggle" aria-expanded="<?php echo $is_open ? 'true' : 'false'; ?>">
                         <span class="filebird-docs-accordion-icon"></span>
                         <?php echo esc_html($folder_group['folder_name']); ?>
-                        <span class="filebird-docs-folder-count">(<?php echo $folder_group['count']; ?> <?php _e('documents', 'filebird-frontend-docs'); ?>)</span>
                     </button>
                 </h4>
                 
@@ -127,7 +126,6 @@ function renderFolderGroups($folder_groups, $atts, $level = 0, $accordion_states
     <?php if (!empty($folder)): ?>
         <h3 class="filebird-docs-folder-title">
             <?php echo esc_html(isset($folder->name) ? $folder->name : __('Documents', 'filebird-frontend-docs')); ?>
-            <span class="filebird-docs-count">(<?php echo count($attachments); ?> <?php _e('documents', 'filebird-frontend-docs'); ?>)</span>
         </h3>
     <?php endif; ?>
     

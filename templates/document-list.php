@@ -17,7 +17,6 @@ extract($data);
     <?php if (!empty($folder)): ?>
         <h3 class="filebird-docs-folder-title">
             <?php echo esc_html(isset($folder->name) ? $folder->name : __('Documents', 'filebird-frontend-docs')); ?>
-            <span class="filebird-docs-count">(<?php echo count($attachments); ?> <?php _e('documents', 'filebird-frontend-docs'); ?>)</span>
         </h3>
     <?php endif; ?>
     

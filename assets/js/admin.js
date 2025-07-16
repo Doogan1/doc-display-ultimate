@@ -195,7 +195,6 @@
                 html += '<div class="filebird-fd-folder-content">';
                 html += '<span class="' + toggleClass + '"><span class="dashicons ' + toggleIcon + '"></span></span>';
                 html += '<span class="filebird-fd-folder-name">' + this.escapeHtml(folder.name) + '</span>';
-                html += '<span class="filebird-fd-folder-count">(' + folder.count + ')</span>';
                 html += '</div>';
                 
                 if (hasChildren) {
@@ -308,7 +307,6 @@
                         var subfolderData = {
                             id: child.id,
                             name: child.name,
-                            count: child.count,
                             children: []
                         };
                         
@@ -337,7 +335,7 @@
                 html += '<div class="' + folderClass + '" data-level="' + level + '">';
                 html += '<div class="subfolder-content">';
                 html += '<span class="' + toggleClass + '"><span class="dashicons ' + toggleIcon + '"></span></span>';
-                html += '<label><input type="checkbox" class="subfolder-checkbox" value="' + subfolder.id + '" checked> ' + this.escapeHtml(subfolder.name) + ' (' + subfolder.count + ')</label>';
+                html += '<label><input type="checkbox" class="subfolder-checkbox" value="' + subfolder.id + '" checked> ' + this.escapeHtml(subfolder.name) + '</label>';
                 html += '</div>';
                 
                 if (hasChildren) {
