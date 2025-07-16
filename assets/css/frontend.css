@@ -631,6 +631,24 @@
     margin-left: 1rem;
 }
 
+/* Nested table styling */
+.filebird-docs-nested-folders .filebird-docs-table-wrapper {
+    margin-left: 1rem;
+}
+
+.filebird-docs-nested-folders .filebird-docs-table {
+    margin-top: 0.5rem;
+}
+
+/* Nested list styling */
+.filebird-docs-nested-folders .filebird-docs-list {
+    margin-left: 1rem;
+}
+
+.filebird-docs-nested-folders .filebird-docs-list-item {
+    margin-bottom: 0.5rem;
+}
+
 /* Ensure nested content is hidden when parent is closed */
 .filebird-docs-accordion-content:not(.filebird-docs-accordion-open) .filebird-docs-nested-folders {
     display: none;
