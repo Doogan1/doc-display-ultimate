@@ -42,7 +42,8 @@ class FileBird_FD_Shortcode_Handler {
             'class' => '',
             'include_subfolders' => 'false',
             'group_by_folder' => 'false',
-            'accordion_default' => 'closed'
+            'accordion_default' => 'closed',
+            'exclude_folders' => ''
         ), $atts, 'filebird_docs');
         
         // Validate folder parameter
@@ -61,6 +62,12 @@ class FileBird_FD_Shortcode_Handler {
         $atts['group_by_folder'] = filter_var($atts['group_by_folder'], FILTER_VALIDATE_BOOLEAN);
         $atts['accordion_default'] = sanitize_text_field($atts['accordion_default']);
         
+        // Parse exclude_folders attribute
+        $exclude_folders = array();
+        if (!empty($atts['exclude_folders'])) {
+            $exclude_folders = array_map('intval', explode(',', $atts['exclude_folders']));
+        }
+        
         // Check if FileBird is available
         if (!FileBird_FD_Helper::isFileBirdAvailable()) {
             return '<p class="filebird-docs-error">' . __('Error: FileBird plugin is not available.', 'filebird-frontend-docs') . '</p>';
@@ -78,7 +85,8 @@ class FileBird_FD_Shortcode_Handler {
             'order' => $atts['order'],
             'limit' => $atts['limit'],
             'include_subfolders' => $atts['include_subfolders'],
-            'group_by_folder' => $atts['group_by_folder']
+            'group_by_folder' => $atts['group_by_folder'],
+            'exclude_folders' => $exclude_folders
         ));
         
         if (empty($attachments)) {
@@ -270,6 +278,12 @@ class FileBird_FD_Shortcode_Handler {
                 'default' => 'closed',
                 'options' => array('open', 'closed'),
                 'description' => __('Default state for accordion folders (open or closed)', 'filebird-frontend-docs')
+            ),
+            'exclude_folders' => array(
+                'type' => 'string',
+                'required' => false,
+                'default' => '',
+                'description' => __('Comma-separated list of folder IDs to exclude', 'filebird-frontend-docs')
             )
         );
     }
