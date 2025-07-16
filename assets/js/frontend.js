@@ -15,6 +15,7 @@
             this.bindEvents();
             this.initTooltips();
             this.initLazyLoading();
+            this.initAccordionStates();
         },
 
         bindEvents: function() {
@@ -31,9 +32,28 @@
                 
                 // Toggle content visibility
                 if (isExpanded) {
-                    $content.removeClass('filebird-docs-accordion-open');
+                    // Closing the folder - hide content and all nested folders
+                    $content.removeClass('filebird-docs-accordion-open').hide();
+                    
+                    // Close all nested accordions within this section
+                    $content.find('.filebird-docs-accordion-toggle').attr('aria-expanded', 'false');
+                    $content.find('.filebird-docs-accordion-content').removeClass('filebird-docs-accordion-open').hide();
                 } else {
-                    $content.addClass('filebird-docs-accordion-open');
+                    // Opening the folder - show content but keep nested accordions in their current state
+                    $content.addClass('filebird-docs-accordion-open').show();
+                    
+                    // Ensure nested accordions maintain their proper state
+                    $content.find('.filebird-docs-accordion-content').each(function() {
+                        var $nestedContent = $(this);
+                        var $nestedToggle = $nestedContent.siblings('.filebird-docs-accordion-header').find('.filebird-docs-accordion-toggle');
+                        var nestedIsExpanded = $nestedToggle.attr('aria-expanded') === 'true';
+                        
+                        if (nestedIsExpanded) {
+                            $nestedContent.addClass('filebird-docs-accordion-open').show();
+                        } else {
+                            $nestedContent.removeClass('filebird-docs-accordion-open').hide();
+                        }
+                    });
                 }
             });
 
@@ -127,6 +147,21 @@
                     imageObserver.observe(this);
                 });
             }
+        },
+
+        initAccordionStates: function() {
+            // Ensure all accordions start in the correct state based on their aria-expanded attributes
+            $('.filebird-docs-accordion-toggle').each(function() {
+                var $toggle = $(this);
+                var $content = $toggle.closest('.filebird-docs-accordion-section').find('.filebird-docs-accordion-content');
+                var isExpanded = $toggle.attr('aria-expanded') === 'true';
+                
+                if (isExpanded) {
+                    $content.addClass('filebird-docs-accordion-open').show();
+                } else {
+                    $content.removeClass('filebird-docs-accordion-open').hide();
+                }
+            });
         },
 
         // AJAX methods for dynamic loading

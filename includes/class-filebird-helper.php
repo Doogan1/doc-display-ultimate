@@ -223,7 +223,8 @@ class FileBird_FD_Helper {
             'limit' => -1,
             'include_metadata' => true,
             'include_subfolders' => false,
-            'group_by_folder' => false
+            'group_by_folder' => false,
+            'exclude_folders' => array()
         );
         
         $args = wp_parse_args($args, $defaults);
@@ -236,6 +237,11 @@ class FileBird_FD_Helper {
                 $all_folder_ids = array($folder_id);
                 $subfolder_ids = self::getSubfolderIds($folder_id);
                 $all_folder_ids = array_merge($all_folder_ids, $subfolder_ids);
+                
+                // Filter out excluded folders
+                if (!empty($args['exclude_folders'])) {
+                    $all_folder_ids = array_diff($all_folder_ids, $args['exclude_folders']);
+                }
                 
                 // Get attachments from all folders
                 $all_attachments = array();
@@ -257,6 +263,10 @@ class FileBird_FD_Helper {
                 return $all_attachments;
             }
         } else {
+            // Check if the main folder is excluded
+            if (!empty($args['exclude_folders']) && in_array($folder_id, $args['exclude_folders'])) {
+                return array();
+            }
             return self::getAttachmentsByFolderId($folder_id, $args);
         }
     }
@@ -300,6 +310,11 @@ class FileBird_FD_Helper {
      * Collect attachments from folder and its children
      */
     private static function collectFolderAttachments($folder, &$grouped_attachments, $args) {
+        // Check if this folder is excluded
+        if (!empty($args['exclude_folders']) && in_array($folder['id'], $args['exclude_folders'])) {
+            return;
+        }
+        
         // Get attachments for current folder
         $attachments = self::getAttachmentsByFolderId($folder['id'], array(
             'orderby' => $args['orderby'],
@@ -308,20 +323,92 @@ class FileBird_FD_Helper {
             'include_metadata' => $args['include_metadata']
         ));
         
-        if (!empty($attachments)) {
-            $grouped_attachments[] = array(
-                'folder_id' => $folder['id'],
-                'folder_name' => $folder['name'],
-                'folder_path' => self::getFolderPath($folder['id']),
-                'attachments' => $attachments,
-                'count' => count($attachments)
-            );
-        }
+        // Create folder group for current folder
+        $folder_group = array(
+            'folder_id' => $folder['id'],
+            'folder_name' => $folder['name'],
+            'folder_path' => self::getFolderPath($folder['id']),
+            'attachments' => $attachments,
+            'count' => count($attachments),
+            'children' => array()
+        );
         
         // Recursively collect from children
         if (!empty($folder['children'])) {
             foreach ($folder['children'] as $child) {
-                self::collectFolderAttachments($child, $grouped_attachments, $args);
+                // Check if child is excluded
+                if (!empty($args['exclude_folders']) && in_array($child['id'], $args['exclude_folders'])) {
+                    continue;
+                }
+                
+                // Get child attachments
+                $child_attachments = self::getAttachmentsByFolderId($child['id'], array(
+                    'orderby' => $args['orderby'],
+                    'order' => $args['order'],
+                    'limit' => -1,
+                    'include_metadata' => $args['include_metadata']
+                ));
+                
+                // Create child folder group
+                $child_group = array(
+                    'folder_id' => $child['id'],
+                    'folder_name' => $child['name'],
+                    'folder_path' => self::getFolderPath($child['id']),
+                    'attachments' => $child_attachments,
+                    'count' => count($child_attachments),
+                    'children' => array()
+                );
+                
+                // Recursively collect child's children
+                if (!empty($child['children'])) {
+                    self::collectChildFolderAttachments($child, $child_group, $args);
+                }
+                
+                // Add child to current folder's children
+                $folder_group['children'][] = $child_group;
+            }
+        }
+        
+        // Add current folder to grouped attachments
+        $grouped_attachments[] = $folder_group;
+    }
+    
+    /**
+     * Recursively collect child folder attachments
+     */
+    private static function collectChildFolderAttachments($parent_folder, &$parent_group, $args) {
+        if (!empty($parent_folder['children'])) {
+            foreach ($parent_folder['children'] as $child) {
+                // Check if child is excluded
+                if (!empty($args['exclude_folders']) && in_array($child['id'], $args['exclude_folders'])) {
+                    continue;
+                }
+                
+                // Get child attachments
+                $child_attachments = self::getAttachmentsByFolderId($child['id'], array(
+                    'orderby' => $args['orderby'],
+                    'order' => $args['order'],
+                    'limit' => -1,
+                    'include_metadata' => $args['include_metadata']
+                ));
+                
+                // Create child folder group
+                $child_group = array(
+                    'folder_id' => $child['id'],
+                    'folder_name' => $child['name'],
+                    'folder_path' => self::getFolderPath($child['id']),
+                    'attachments' => $child_attachments,
+                    'count' => count($child_attachments),
+                    'children' => array()
+                );
+                
+                // Recursively collect child's children
+                if (!empty($child['children'])) {
+                    self::collectChildFolderAttachments($child, $child_group, $args);
+                }
+                
+                // Add child to parent's children
+                $parent_group['children'][] = $child_group;
             }
         }
     }

@@ -14,6 +14,7 @@
         selectedFolderId: null,
         selectedFolderName: null,
         folderTree: null,
+        excludedSubfolders: [],
 
         init: function() {
             this.loadFolders();
@@ -39,6 +40,36 @@
             $(document).on('click', '.filebird-fd-clear-selection', function(e) {
                 e.preventDefault();
                 FileBirdFDAdmin.Admin.clearSelection();
+            });
+
+            // Subfolder checkbox events
+            $(document).on('change', '.subfolder-checkbox', function() {
+                FileBirdFDAdmin.Admin.updateExcludedSubfolders();
+            });
+
+            // Subfolder toggle events
+            $(document).on('click', '.subfolder-toggle', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                FileBirdFDAdmin.Admin.toggleSubfolder($(this));
+            });
+
+            // Check/Uncheck all subfolders
+            $('#check-all-subfolders').on('click', function() {
+                FileBirdFDAdmin.Admin.checkAllSubfolders();
+            });
+
+            $('#uncheck-all-subfolders').on('click', function() {
+                FileBirdFDAdmin.Admin.uncheckAllSubfolders();
+            });
+
+            // Expand/Collapse all subfolders
+            $('#expand-all-subfolders').on('click', function() {
+                FileBirdFDAdmin.Admin.expandAllSubfolders();
+            });
+
+            $('#collapse-all-subfolders').on('click', function() {
+                FileBirdFDAdmin.Admin.collapseAllSubfolders();
             });
 
             // Search functionality
@@ -173,13 +204,106 @@
             $('#selected-folder-id').val(folderId);
             $('#selected-folder-display').html('<span class="selected-folder-name">' + this.escapeHtml(folderName) + '</span><button type="button" class="filebird-fd-clear-selection button button-small">Clear</button>');
             
+            // Populate subfolders if they exist
+            this.populateSubfolders(folderId);
+            
             // Update shortcode
             this.updateShortcode();
+        },
+
+        populateSubfolders: function(folderId) {
+            var subfolders = this.findSubfoldersHierarchical(folderId);
+            
+            if (subfolders.length > 0) {
+                var html = this.buildNestedSubfolderHtml(subfolders);
+                
+                $('#subfolder-list').html(html);
+                $('#subfolder-controls').show();
+                
+                // Initialize excluded subfolders
+                this.updateExcludedSubfolders();
+            } else {
+                $('#subfolder-controls').hide();
+                this.excludedSubfolders = [];
+            }
+        },
+
+        findSubfoldersHierarchical: function(folderId) {
+            var hierarchicalSubfolders = [];
+            this.findSubfoldersHierarchicalRecursive(this.folderTree, folderId, hierarchicalSubfolders);
+            return hierarchicalSubfolders;
+        },
+
+        findSubfoldersHierarchicalRecursive: function(folders, parentId, hierarchicalSubfolders) {
+            folders.forEach(function(folder) {
+                if (folder.id == parentId && folder.children) {
+                    folder.children.forEach(function(child) {
+                        var subfolderData = {
+                            id: child.id,
+                            name: child.name,
+                            count: child.count,
+                            children: []
+                        };
+                        
+                        // Recursively get nested subfolders
+                        if (child.children && child.children.length > 0) {
+                            this.findSubfoldersHierarchicalRecursive([child], child.id, subfolderData.children);
+                        }
+                        
+                        hierarchicalSubfolders.push(subfolderData);
+                    }.bind(this));
+                } else if (folder.children) {
+                    this.findSubfoldersHierarchicalRecursive(folder.children, parentId, hierarchicalSubfolders);
+                }
+            }.bind(this));
+        },
+
+        buildNestedSubfolderHtml: function(subfolders, level = 0) {
+            var html = '';
+            
+            subfolders.forEach(function(subfolder) {
+                var hasChildren = subfolder.children && subfolder.children.length > 0;
+                var folderClass = 'subfolder-item';
+                var toggleClass = hasChildren ? 'subfolder-toggle' : 'subfolder-toggle-empty';
+                var toggleIcon = hasChildren ? 'dashicons-arrow-right-alt2' : 'dashicons-arrow-right-alt2';
+                
+                html += '<div class="' + folderClass + '" data-level="' + level + '">';
+                html += '<div class="subfolder-content">';
+                html += '<span class="' + toggleClass + '"><span class="dashicons ' + toggleIcon + '"></span></span>';
+                html += '<label><input type="checkbox" class="subfolder-checkbox" value="' + subfolder.id + '" checked> ' + this.escapeHtml(subfolder.name) + ' (' + subfolder.count + ')</label>';
+                html += '</div>';
+                
+                if (hasChildren) {
+                    html += '<div class="subfolder-children" style="display: none;">';
+                    html += this.buildNestedSubfolderHtml(subfolder.children, level + 1);
+                    html += '</div>';
+                }
+                
+                html += '</div>';
+            }.bind(this));
+            
+            return html;
         },
 
         toggleFolder: function($toggle) {
             var $folderItem = $toggle.closest('.filebird-fd-folder-item');
             var $children = $folderItem.find('> .filebird-fd-folder-children');
+            var $icon = $toggle.find('.dashicons');
+            
+            if ($children.length > 0) {
+                if ($children.is(':visible')) {
+                    $children.slideUp(200);
+                    $icon.removeClass('dashicons-arrow-down-alt2').addClass('dashicons-arrow-right-alt2');
+                } else {
+                    $children.slideDown(200);
+                    $icon.removeClass('dashicons-arrow-right-alt2').addClass('dashicons-arrow-down-alt2');
+                }
+            }
+        },
+
+        toggleSubfolder: function($toggle) {
+            var $subfolderItem = $toggle.closest('.subfolder-item');
+            var $children = $subfolderItem.find('.subfolder-children');
             var $icon = $toggle.find('.dashicons');
             
             if ($children.length > 0) {
@@ -297,6 +421,11 @@
                 shortcode += ' accordion_default="' + accordionDefault + '"';
             }
 
+            // Add exclude_folders attribute if there are excluded subfolders
+            if (this.excludedSubfolders.length > 0) {
+                shortcode += ' exclude_folders="' + this.excludedSubfolders.join(',') + '"';
+            }
+
             shortcode += ']';
 
             $('#shortcode-output').text(shortcode);
@@ -336,9 +465,39 @@
             $('.filebird-fd-folder-item').removeClass('selected');
             this.selectedFolderId = null;
             this.selectedFolderName = null;
+            this.excludedSubfolders = [];
             $('#selected-folder-id').val('');
             $('#selected-folder-display').html('<span class="no-folder-selected">No folder selected</span>');
+            $('#subfolder-controls').hide();
             this.updateShortcode();
+        },
+
+        updateExcludedSubfolders: function() {
+            this.excludedSubfolders = [];
+            $('.subfolder-checkbox:not(:checked)').each(function() {
+                FileBirdFDAdmin.Admin.excludedSubfolders.push($(this).val());
+            });
+            this.updateShortcode();
+        },
+
+        checkAllSubfolders: function() {
+            $('.subfolder-checkbox').prop('checked', true);
+            this.updateExcludedSubfolders();
+        },
+
+        uncheckAllSubfolders: function() {
+            $('.subfolder-checkbox').prop('checked', false);
+            this.updateExcludedSubfolders();
+        },
+
+        expandAllSubfolders: function() {
+            $('.subfolder-children').slideDown(200);
+            $('.subfolder-toggle .dashicons').removeClass('dashicons-arrow-right-alt2').addClass('dashicons-arrow-down-alt2');
+        },
+
+        collapseAllSubfolders: function() {
+            $('.subfolder-children').slideUp(200);
+            $('.subfolder-toggle .dashicons').removeClass('dashicons-arrow-down-alt2').addClass('dashicons-arrow-right-alt2');
         }
     };
 

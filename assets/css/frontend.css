@@ -594,17 +594,56 @@
 }
 
 .filebird-docs-accordion-content {
-    max-height: 0;
     overflow: hidden;
-    transition: max-height 0.3s ease;
+    transition: all 0.3s ease;
 }
 
 .filebird-docs-accordion-content.filebird-docs-accordion-open {
-    max-height: none;
+    display: block;
+}
+
+/* Ensure accordion content is hidden when aria-expanded is false */
+.filebird-docs-accordion-toggle[aria-expanded="false"] + .filebird-docs-accordion-content {
+    display: none !important;
+}
+
+/* Ensure accordion content is visible when aria-expanded is true */
+.filebird-docs-accordion-toggle[aria-expanded="true"] + .filebird-docs-accordion-content {
+    display: block !important;
 }
 
 .filebird-docs-accordion-content > * {
-    padding: 1rem;
+    margin-top: 1rem;
+}
+
+/* Nested folders styling */
+.filebird-docs-nested-folders {
+    margin-top: 1rem;
+    padding-left: 1rem;
+    border-left: 2px solid #e1e5e9;
+}
+
+.filebird-docs-nested-folders .filebird-docs-folder-section {
+    margin-bottom: 1rem;
+}
+
+.filebird-docs-nested-folders .filebird-docs-accordion-content {
+    margin-left: 1rem;
+}
+
+/* Ensure nested content is hidden when parent is closed */
+.filebird-docs-accordion-content:not(.filebird-docs-accordion-open) .filebird-docs-nested-folders {
+    display: none;
+}
+
+/* Ensure nested accordion content respects its own state when parent is open */
+.filebird-docs-accordion-content.filebird-docs-accordion-open .filebird-docs-accordion-content:not(.filebird-docs-accordion-open) {
+    display: none;
+}
+
+/* Ensure nested accordion content is visible when both parent and nested are open */
+.filebird-docs-accordion-content.filebird-docs-accordion-open .filebird-docs-accordion-content.filebird-docs-accordion-open {
+    display: block;
 }
 
 /* Responsive Accordion */

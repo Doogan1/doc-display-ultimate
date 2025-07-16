@@ -12,33 +12,32 @@ if (!defined('ABSPATH')) {
 
 // Extract variables
 extract($data);
-?>
-<div class="<?php echo esc_attr($container_classes); ?>">
-    <?php if (!empty($folder)): ?>
-        <h3 class="filebird-docs-folder-title">
-            <?php echo esc_html(isset($folder->name) ? $folder->name : __('Documents', 'filebird-frontend-docs')); ?>
-            <span class="filebird-docs-count">(<?php echo count($attachments); ?> <?php _e('documents', 'filebird-frontend-docs'); ?>)</span>
-        </h3>
-    <?php endif; ?>
-    
-    <?php if (!empty($attachments) && is_array($attachments)): ?>
-        <?php foreach ($attachments as $folder_group): ?>
-            <div class="filebird-docs-folder-section filebird-docs-accordion-section">
-                <div class="filebird-docs-accordion-header" data-folder-id="<?php echo esc_attr($folder_group['folder_id']); ?>">
-                    <h4 class="filebird-docs-folder-section-title">
-                        <button class="filebird-docs-accordion-toggle" aria-expanded="<?php echo ($atts['accordion_default'] === 'open') ? 'true' : 'false'; ?>">
-                            <span class="filebird-docs-accordion-icon"></span>
-                            <?php echo esc_html($folder_group['folder_name']); ?>
-                            <span class="filebird-docs-folder-count">(<?php echo $folder_group['count']; ?> <?php _e('documents', 'filebird-frontend-docs'); ?>)</span>
-                        </button>
-                    </h4>
-                    
-                    <?php if (!empty($folder_group['folder_path']) && $folder_group['folder_path'] !== $folder_group['folder_name']): ?>
-                        <p class="filebird-docs-folder-path"><?php echo esc_html($folder_group['folder_path']); ?></p>
-                    <?php endif; ?>
-                </div>
+
+/**
+ * Recursively render folder groups
+ */
+function renderFolderGroups($folder_groups, $atts, $level = 0) {
+    foreach ($folder_groups as $folder_group) {
+        $has_children = !empty($folder_group['children']);
+        $is_open = $atts['accordion_default'] === 'open';
+        ?>
+        <div class="filebird-docs-folder-section filebird-docs-accordion-section" data-level="<?php echo $level; ?>">
+            <div class="filebird-docs-accordion-header" data-folder-id="<?php echo esc_attr($folder_group['folder_id']); ?>">
+                <h4 class="filebird-docs-folder-section-title">
+                    <button class="filebird-docs-accordion-toggle" aria-expanded="<?php echo $is_open ? 'true' : 'false'; ?>">
+                        <span class="filebird-docs-accordion-icon"></span>
+                        <?php echo esc_html($folder_group['folder_name']); ?>
+                        <span class="filebird-docs-folder-count">(<?php echo $folder_group['count']; ?> <?php _e('documents', 'filebird-frontend-docs'); ?>)</span>
+                    </button>
+                </h4>
                 
-                <div class="filebird-docs-accordion-content <?php echo ($atts['accordion_default'] === 'open') ? 'filebird-docs-accordion-open' : ''; ?>">
+                <?php if (!empty($folder_group['folder_path']) && $folder_group['folder_path'] !== $folder_group['folder_name']): ?>
+                    <p class="filebird-docs-folder-path"><?php echo esc_html($folder_group['folder_path']); ?></p>
+                <?php endif; ?>
+            </div>
+            
+            <div class="filebird-docs-accordion-content <?php echo $is_open ? 'filebird-docs-accordion-open' : ''; ?>" <?php echo !$is_open ? 'style="display: none;"' : ''; ?>>
+                <?php if (!empty($folder_group['attachments'])): ?>
                     <div class="filebird-docs-grid filebird-docs-grid-<?php echo esc_attr($atts['columns']); ?>">
                     <?php foreach ($folder_group['attachments'] as $attachment): ?>
                         <div class="filebird-docs-grid-item">
@@ -98,10 +97,30 @@ extract($data);
                             </div>
                         </div>
                     <?php endforeach; ?>
-                </div>
-                </div>
+                    </div>
+                <?php endif; ?>
+                
+                <?php if (!empty($folder_group['children'])): ?>
+                    <div class="filebird-docs-nested-folders">
+                        <?php renderFolderGroups($folder_group['children'], $atts, $level + 1); ?>
+                    </div>
+                <?php endif; ?>
             </div>
-        <?php endforeach; ?>
+        </div>
+        <?php
+    }
+}
+?>
+<div class="<?php echo esc_attr($container_classes); ?>">
+    <?php if (!empty($folder)): ?>
+        <h3 class="filebird-docs-folder-title">
+            <?php echo esc_html(isset($folder->name) ? $folder->name : __('Documents', 'filebird-frontend-docs')); ?>
+            <span class="filebird-docs-count">(<?php echo count($attachments); ?> <?php _e('documents', 'filebird-frontend-docs'); ?>)</span>
+        </h3>
+    <?php endif; ?>
+    
+    <?php if (!empty($attachments) && is_array($attachments)): ?>
+        <?php renderFolderGroups($attachments, $atts); ?>
     <?php else: ?>
         <div class="filebird-docs-empty">
             <p><?php _e('No documents found in this folder.', 'filebird-frontend-docs'); ?></p>

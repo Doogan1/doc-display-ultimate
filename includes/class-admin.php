@@ -133,6 +133,28 @@ class FileBird_FD_Admin {
                                                     <span class="no-folder-selected"><?php _e('No folder selected', 'filebird-frontend-docs'); ?></span>
                                                 </div>
                                                 <input type="hidden" id="selected-folder-id" value="">
+                                                
+                                                <div id="subfolder-controls" style="display: none;">
+                                                    <label><?php _e('Subfolder Selection:', 'filebird-frontend-docs'); ?></label>
+                                                    <p class="description"><?php _e('Uncheck folders you want to exclude from the display. The selected parent folder is always included.', 'filebird-frontend-docs'); ?></p>
+                                                    <div id="subfolder-list">
+                                                        <!-- Subfolders will be populated here -->
+                                                    </div>
+                                                    <div class="filebird-fd-subfolder-actions">
+                                                        <button type="button" id="check-all-subfolders" class="button button-small">
+                                                            <?php _e('Check All', 'filebird-frontend-docs'); ?>
+                                                        </button>
+                                                        <button type="button" id="uncheck-all-subfolders" class="button button-small">
+                                                            <?php _e('Uncheck All', 'filebird-frontend-docs'); ?>
+                                                        </button>
+                                                        <button type="button" id="expand-all-subfolders" class="button button-small">
+                                                            <?php _e('Expand All', 'filebird-frontend-docs'); ?>
+                                                        </button>
+                                                        <button type="button" id="collapse-all-subfolders" class="button button-small">
+                                                            <?php _e('Collapse All', 'filebird-frontend-docs'); ?>
+                                                        </button>
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
                                         <p class="description"><?php _e('Click on a folder to select it for the shortcode.', 'filebird-frontend-docs'); ?></p>

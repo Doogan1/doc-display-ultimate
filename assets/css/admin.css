@@ -253,6 +253,127 @@
     line-height: 1.4;
 }
 
+/* Subfolder Controls */
+#subfolder-controls {
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid #e5e5e5;
+}
+
+#subfolder-controls label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 10px;
+    color: #23282d;
+}
+
+#subfolder-controls .description {
+    margin-bottom: 15px;
+    color: #666;
+    font-style: italic;
+}
+
+#subfolder-list {
+    max-height: 200px;
+    overflow-y: auto;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+    background: #fff;
+    padding: 10px;
+    margin-bottom: 10px;
+}
+
+.subfolder-item {
+    margin-bottom: 8px;
+    padding: 5px 0;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.subfolder-item:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+}
+
+.subfolder-content {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.subfolder-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+    color: #666;
+    transition: color 0.2s ease;
+    flex-shrink: 0;
+}
+
+.subfolder-toggle:hover {
+    color: #0073aa;
+}
+
+.subfolder-toggle-empty {
+    width: 16px;
+    height: 16px;
+    display: inline-block;
+    flex-shrink: 0;
+}
+
+.subfolder-children {
+    margin-left: 20px;
+    margin-top: 8px;
+    padding-left: 10px;
+    border-left: 2px solid #e5e5e5;
+}
+
+.subfolder-children .subfolder-item {
+    margin-bottom: 6px;
+    padding: 3px 0;
+}
+
+.subfolder-children .subfolder-children {
+    margin-left: 15px;
+    padding-left: 8px;
+}
+
+.subfolder-item label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: normal;
+    margin: 0;
+    cursor: pointer;
+    color: #23282d;
+    flex: 1;
+}
+
+.subfolder-item input[type="checkbox"] {
+    margin: 0;
+}
+
+.subfolder-item strong {
+    color: #0073aa;
+}
+
+.filebird-fd-subfolder-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+.filebird-fd-subfolder-actions .button {
+    width: 100%;
+    text-align: center;
+    font-size: 11px;
+    padding: 4px 8px;
+    height: auto;
+    line-height: 1.4;
+}
+
 /* Loading states */
 .filebird-fd-loading {
     text-align: center;
