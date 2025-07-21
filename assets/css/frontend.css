@@ -252,11 +252,12 @@ h4.filebird-docs-card-title {
     width: 100%;
     border-collapse: collapse;
     background: #fff;
+    padding: .5rem !important;
 }
 
 .filebird-docs-table th {
     background: #f8f9fa;
-    padding: 1rem;
+    padding: .5rem !important;
     text-align: left;
     font-weight: 600;
     color: #333;
@@ -264,7 +265,7 @@ h4.filebird-docs-card-title {
 }
 
 .filebird-docs-table td {
-    padding: 1rem;
+    padding: .5rem !important;
     border-bottom: 1px solid #e1e5e9;
     vertical-align: middle;
 }
@@ -369,9 +370,9 @@ h4.filebird-docs-card-title {
     content: "📄";
 }
 
-.filebird-docs-icon-pdf::before {
+/* .filebird-docs-icon-pdf::before {
     content: "📕";
-}
+} */
 
 .filebird-docs-icon-doc::before,
 .filebird-docs-icon-docx::before {
@@ -595,6 +596,7 @@ h4.filebird-docs-folder-section-title {
     font-weight: 600;
     color: #333;
     transition: all 0.3s ease;
+    margin-bottom: 0 !important;
 }
 
 .filebird-docs-accordion-toggle:hover {
