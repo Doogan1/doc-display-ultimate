@@ -86,6 +86,7 @@ class FileBirdFrontendDocuments {
         require_once FB_FD_PLUGIN_PATH . 'includes/class-filebird-helper.php';
         require_once FB_FD_PLUGIN_PATH . 'includes/class-admin.php';
         require_once FB_FD_PLUGIN_PATH . 'includes/class-document-library-cpt.php';
+        require_once FB_FD_PLUGIN_PATH . 'includes/class-document-order-manager.php';
     }
     
     /**
@@ -103,6 +104,9 @@ class FileBirdFrontendDocuments {
         
         // Initialize document library custom post type
         new FileBird_FD_Document_Library_CPT();
+        
+        // Note: Document Order Manager functionality is now integrated into Document Library CPT
+        // The standalone order manager is no longer needed
     }
     
     /**

@@ -54,6 +54,21 @@ The plugin now includes a custom post type called "Document Libraries" that allo
 
 When viewing a document library on the frontend, administrators will see an "Edit Library" button that takes them directly to the library settings in the admin.
 
+**Document Order Manager:**
+
+The plugin includes a powerful Document Order Manager integrated into the Document Library custom post type. When you select "Menu Order" as the ordering method, a drag-and-drop interface appears allowing you to reorder documents within the selected folders.
+
+**Features:**
+- Drag-and-drop document reordering
+- Integrated into Document Library settings
+- Real-time order preview
+- Save/reset functionality
+- Automatic loading of documents from selected folders
+- Responsive design for all devices
+
+**Access:**
+Go to **Document Libraries** → **Add New** or **Edit** → Select "Menu Order" in the "Order By" dropdown.
+
 **Available Attributes:**
 
 * `folder` (required): FileBird folder ID
@@ -164,6 +179,7 @@ Yes, the plugin includes AJAX functionality for dynamic loading of folders and d
 * Document Library custom post type
 * Frontend editor buttons for administrators
 * Easy-to-use admin interface for content editors
+* Document Order Manager with drag-and-drop functionality
 
 == Upgrade Notice ==
 

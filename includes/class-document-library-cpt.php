@@ -19,6 +19,9 @@ class FileBird_FD_Document_Library_CPT {
         add_action('init', array($this, 'registerShortcode'));
         add_action('wp_enqueue_scripts', array($this, 'enqueueEditorStyles'));
         add_action('admin_enqueue_scripts', array($this, 'enqueueAdminScripts'));
+        add_action('wp_ajax_filebird_fd_get_folders_order_manager', array($this, 'ajaxGetFoldersOrderManager'));
+        add_action('wp_ajax_filebird_fd_get_documents_for_ordering', array($this, 'ajaxGetDocumentsForOrdering'));
+        add_action('wp_ajax_filebird_fd_update_document_order', array($this, 'ajaxUpdateDocumentOrder'));
     }
     
     /**
@@ -236,6 +239,41 @@ class FileBird_FD_Document_Library_CPT {
                 </td>
             </tr>
             
+            <!-- Document Order Manager (shown when menu_order is selected) -->
+            <tr id="document-order-manager-row" style="display: none;">
+                <th scope="row">
+                    <label><?php _e('Document Order', 'filebird-frontend-docs'); ?></label>
+                </th>
+                <td>
+                    <div class="filebird-fd-document-order-manager">
+                        <p><?php _e('Drag and drop documents to reorder them. This order will be used when "Menu Order" is selected.', 'filebird-frontend-docs'); ?></p>
+                        
+                        <div class="filebird-fd-order-controls">
+                            <button type="button" id="save-order" class="button button-primary">
+                                <?php _e('Save Order', 'filebird-frontend-docs'); ?>
+                            </button>
+                            <button type="button" id="reset-order" class="button">
+                                <?php _e('Reset to Default', 'filebird-frontend-docs'); ?>
+                            </button>
+                            <button type="button" id="preview-order" class="button">
+                                <?php _e('Preview Order', 'filebird-frontend-docs'); ?>
+                            </button>
+                        </div>
+                        
+                        <div id="document-list" class="filebird-fd-document-list">
+                            <div class="empty">
+                                <?php _e('Select folders above to load documents for ordering.', 'filebird-frontend-docs'); ?>
+                            </div>
+                        </div>
+                        
+                        <div id="order-status" class="filebird-fd-order-status" style="display: none;">
+                            <span class="spinner is-active"></span>
+                            <span class="status-text"></span>
+                        </div>
+                    </div>
+                </td>
+            </tr>
+            
             <tr>
                 <th scope="row">
                     <label for="document_library_order"><?php _e('Order', 'filebird-frontend-docs'); ?></label>
@@ -351,6 +389,11 @@ class FileBird_FD_Document_Library_CPT {
                     if (selectedFolderId) {
                         $('#document_library_folders').val(selectedFolderId);
                     }
+                    
+                    // Load documents for ordering if menu_order is selected
+                    if ($('#document_library_orderby').val() === 'menu_order') {
+                        FileBirdFDOrder.OrderManager.loadDocumentsForLibrary();
+                    }
                 };
                 
                 // Initialize with existing selected folders
@@ -387,6 +430,40 @@ class FileBird_FD_Document_Library_CPT {
                         // Start checking for the folder
                         setTimeout(checkFolderExists, 500);
                     }
+                }
+            }
+            
+            // Handle orderby change to show/hide document order manager
+            $('#document_library_orderby').on('change', function() {
+                var orderby = $(this).val();
+                if (orderby === 'menu_order') {
+                    $('#document-order-manager-row').show();
+                    // Load documents if folders are selected
+                    var selectedFolders = $('#document_library_folders').val();
+                    if (selectedFolders && typeof FileBirdFDOrder !== 'undefined' && FileBirdFDOrder.OrderManager) {
+                        FileBirdFDOrder.OrderManager.loadDocumentsForLibrary();
+                    }
+                } else {
+                    $('#document-order-manager-row').hide();
+                }
+            });
+            
+            // Initialize order manager if menu_order is selected
+            if ($('#document_library_orderby').val() === 'menu_order') {
+                $('#document-order-manager-row').show();
+                
+                // Load documents if folders are already selected (for existing libraries)
+                var selectedFolders = $('#document_library_folders').val();
+                if (selectedFolders && typeof FileBirdFDOrder !== 'undefined' && FileBirdFDOrder.OrderManager) {
+                    // Wait for the order manager to be fully initialized
+                    var checkInitialized = function() {
+                        if (FileBirdFDOrder.OrderManager.isInitialized) {
+                            FileBirdFDOrder.OrderManager.loadDocumentsForLibrary();
+                        } else {
+                            setTimeout(checkInitialized, 100);
+                        }
+                    };
+                    setTimeout(checkInitialized, 500);
                 }
             }
         });
@@ -529,17 +606,30 @@ class FileBird_FD_Document_Library_CPT {
         
         $shortcode = '[filebird_docs ' . implode(' ', $shortcode_parts) . ']';
         
-        // Add edit button for administrators
+        // Start building the output with a cohesive container
         $output = '';
-        if (current_user_can('edit_post', $post_id)) {
+        
+        // Check if user can edit this library
+        $can_edit = current_user_can('edit_post', $post_id);
+        
+        if ($can_edit) {
             $edit_url = get_edit_post_link($post_id);
-            $output .= '<div class="doc-library-editor-controls">';
+            $output .= '<div class="doc-library-container doc-library-editable">';
+            $output .= '<div class="doc-library-header">';
             $output .= '<a href="' . esc_url($edit_url) . '" class="doc-library-edit-button">' . __('Edit Library', 'filebird-frontend-docs') . '</a>';
             $output .= '</div>';
+            $output .= '<div class="doc-library-content">';
+        } else {
+            $output .= '<div class="doc-library-container">';
+            $output .= '<div class="doc-library-content">';
         }
         
         // Render the shortcode
         $output .= do_shortcode($shortcode);
+        
+        // Close the content and container divs
+        $output .= '</div>'; // .doc-library-content
+        $output .= '</div>'; // .doc-library-container
         
         return $output;
     }
@@ -560,6 +650,7 @@ class FileBird_FD_Document_Library_CPT {
         
         // Enqueue WordPress dashicons for folder tree icons
         wp_enqueue_style('dashicons');
+        wp_enqueue_style('wp-jquery-ui-dialog');
         
         wp_enqueue_style(
             'filebird-frontend-docs-admin',
@@ -568,10 +659,28 @@ class FileBird_FD_Document_Library_CPT {
             FB_FD_VERSION
         );
         
+        wp_enqueue_style(
+            'filebird-frontend-docs-order-manager',
+            FB_FD_PLUGIN_URL . 'assets/css/order-manager.css',
+            array(),
+            FB_FD_VERSION
+        );
+        
         wp_enqueue_script(
             'filebird-frontend-docs-admin',
             FB_FD_PLUGIN_URL . 'assets/js/admin.js',
             array('jquery'),
+            FB_FD_VERSION,
+            true
+        );
+        
+        wp_enqueue_script('jquery-ui-sortable');
+        wp_enqueue_script('jquery-ui-dialog');
+        
+        wp_enqueue_script(
+            'filebird-frontend-docs-order-manager',
+            FB_FD_PLUGIN_URL . 'assets/js/order-manager.js',
+            array('jquery', 'jquery-ui-sortable', 'jquery-ui-dialog'),
             FB_FD_VERSION,
             true
         );
@@ -585,8 +694,167 @@ class FileBird_FD_Document_Library_CPT {
             )
         );
         
+        wp_localize_script(
+            'filebird-frontend-docs-order-manager',
+            'filebird_fd_order',
+            array(
+                'ajax_url' => admin_url('admin-ajax.php'),
+                'nonce' => wp_create_nonce('filebird_fd_order_nonce'),
+                'strings' => array(
+                    'saving' => __('Saving order...', 'filebird-frontend-docs'),
+                    'saved' => __('Order saved successfully!', 'filebird-frontend-docs'),
+                    'error' => __('Error saving order. Please try again.', 'filebird-frontend-docs'),
+                    'confirm_reset' => __('Are you sure you want to reset the order? This cannot be undone.', 'filebird-frontend-docs')
+                )
+            )
+        );
+        
+        // Also localize the admin script data for folder loading
+        wp_localize_script(
+            'filebird-frontend-docs-order-manager',
+            'filebird_fd_admin',
+            array(
+                'ajax_url' => admin_url('admin-ajax.php'),
+                'nonce' => wp_create_nonce('filebird_fd_admin_nonce')
+            )
+        );
+        
         // Debug: Log that scripts have been enqueued
         error_log('FileBird FD: Admin scripts enqueued for document_library');
+    }
+    
+    /**
+     * AJAX handler for getting folders in order manager
+     */
+    public function ajaxGetFoldersOrderManager() {
+        // Verify nonce and permissions
+        if (!wp_verify_nonce($_POST['nonce'], 'filebird_fd_admin_nonce') || 
+            !current_user_can('manage_options')) {
+            wp_die(__('Security check failed.', 'filebird-frontend-docs'));
+        }
+        
+        $folders_tree = FileBird_FD_Helper::getFolderTree();
+        
+        wp_send_json_success($folders_tree);
+    }
+    
+    /**
+     * AJAX handler for getting documents for ordering
+     */
+    public function ajaxGetDocumentsForOrdering() {
+        // Verify nonce and permissions
+        if (!wp_verify_nonce($_POST['nonce'], 'filebird_fd_order_nonce') || 
+            !current_user_can('manage_options')) {
+            wp_die(__('Security check failed.', 'filebird-frontend-docs'));
+        }
+        
+        $folder_id = intval($_POST['folder_id']);
+        
+        if (!$folder_id) {
+            wp_send_json_error(__('Invalid folder ID.', 'filebird-frontend-docs'));
+        }
+        
+        // Get documents with current order
+        $documents = $this->getDocumentsWithOrder($folder_id);
+        
+        wp_send_json_success($documents);
+    }
+    
+    /**
+     * AJAX handler for updating document order
+     */
+    public function ajaxUpdateDocumentOrder() {
+        // Verify nonce and permissions
+        if (!wp_verify_nonce($_POST['nonce'], 'filebird_fd_order_nonce') || 
+            !current_user_can('manage_options')) {
+            wp_die(__('Security check failed.', 'filebird-frontend-docs'));
+        }
+        
+        $folder_id = intval($_POST['folder_id']);
+        $document_order = $_POST['document_order'];
+        
+        if (!$folder_id || !is_array($document_order)) {
+            wp_send_json_error(__('Invalid data provided.', 'filebird-frontend-docs'));
+        }
+        
+        // Update the order
+        $result = $this->updateDocumentOrder($folder_id, $document_order);
+        
+        if ($result) {
+            wp_send_json_success(__('Order updated successfully.', 'filebird-frontend-docs'));
+        } else {
+            wp_send_json_error(__('Error updating order.', 'filebird-frontend-docs'));
+        }
+    }
+    
+    /**
+     * Get documents with their current order
+     */
+    private function getDocumentsWithOrder($folder_id) {
+        $documents = FileBird_FD_Helper::getAttachmentsByFolderId($folder_id, array(
+            'orderby' => 'menu_order',
+            'order' => 'ASC',
+            'limit' => -1
+        ));
+        
+        $formatted_documents = array();
+        foreach ($documents as $doc) {
+            $formatted_documents[] = array(
+                'id' => $doc->ID,
+                'title' => $doc->post_title,
+                'filename' => basename($doc->file_path),
+                'file_type' => $doc->file_type,
+                'file_size' => $doc->file_size,
+                'menu_order' => $doc->menu_order,
+                'thumbnail' => $doc->thumbnail_url,
+                'url' => $doc->file_url
+            );
+        }
+        
+        return $formatted_documents;
+    }
+    
+    /**
+     * Update document order in database
+     */
+    private function updateDocumentOrder($folder_id, $document_order) {
+        global $wpdb;
+        
+        try {
+            // Start transaction
+            $wpdb->query('START TRANSACTION');
+            
+            foreach ($document_order as $index => $document_id) {
+                $document_id = intval($document_id);
+                $menu_order = intval($index) + 1;
+                
+                $result = $wpdb->update(
+                    $wpdb->posts,
+                    array('menu_order' => $menu_order),
+                    array('ID' => $document_id, 'post_type' => 'attachment'),
+                    array('%d'),
+                    array('%d', '%s')
+                );
+                
+                if ($result === false) {
+                    throw new Exception('Failed to update document order');
+                }
+            }
+            
+            // Commit transaction
+            $wpdb->query('COMMIT');
+            
+            // Clear any caches
+            clean_post_cache($folder_id);
+            
+            return true;
+            
+        } catch (Exception $e) {
+            // Rollback transaction
+            $wpdb->query('ROLLBACK');
+            error_log('FileBird FD: Error updating document order - ' . $e->getMessage());
+            return false;
+        }
     }
     
     /**

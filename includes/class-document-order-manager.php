@@ -1,0 +1,344 @@
+<?php
+/**
+ * Document Order Manager Class
+ * 
+ * Handles document ordering functionality with drag-and-drop interface
+ */
+
+// Prevent direct access
+if (!defined('ABSPATH')) {
+    exit;
+}
+
+class FileBird_FD_Document_Order_Manager {
+    
+    public function __construct() {
+        add_action('admin_menu', array($this, 'addOrderManagerMenu'));
+        add_action('admin_enqueue_scripts', array($this, 'enqueueOrderManagerScripts'));
+        add_action('wp_ajax_filebird_fd_get_documents_for_ordering', array($this, 'ajaxGetDocumentsForOrdering'));
+        add_action('wp_ajax_filebird_fd_update_document_order', array($this, 'ajaxUpdateDocumentOrder'));
+        add_action('wp_ajax_filebird_fd_get_folder_documents', array($this, 'ajaxGetFolderDocuments'));
+        add_action('wp_ajax_filebird_fd_get_folders_order_manager', array($this, 'ajaxGetFoldersOrderManager'));
+    }
+    
+    /**
+     * Add order manager menu
+     */
+    public function addOrderManagerMenu() {
+        add_submenu_page(
+            'upload.php', // Parent slug (Media menu)
+            __('Document Order Manager', 'filebird-frontend-docs'),
+            __('Document Order', 'filebird-frontend-docs'),
+            'manage_options',
+            'filebird-document-order',
+            array($this, 'orderManagerPage')
+        );
+    }
+    
+    /**
+     * Enqueue scripts and styles for order manager
+     */
+    public function enqueueOrderManagerScripts($hook) {
+        if ($hook !== 'media_page_filebird-document-order') {
+            return;
+        }
+        
+        wp_enqueue_style('dashicons');
+        wp_enqueue_style('wp-jquery-ui-dialog');
+        
+        wp_enqueue_style(
+            'filebird-frontend-docs-order-manager',
+            FB_FD_PLUGIN_URL . 'assets/css/order-manager.css',
+            array(),
+            FB_FD_VERSION
+        );
+        
+        wp_enqueue_script('jquery-ui-sortable');
+        wp_enqueue_script('jquery-ui-dialog');
+        
+        wp_enqueue_script(
+            'filebird-frontend-docs-order-manager',
+            FB_FD_PLUGIN_URL . 'assets/js/order-manager.js',
+            array('jquery', 'jquery-ui-sortable', 'jquery-ui-dialog'),
+            FB_FD_VERSION,
+            true
+        );
+        
+        wp_localize_script(
+            'filebird-frontend-docs-order-manager',
+            'filebird_fd_order',
+            array(
+                'ajax_url' => admin_url('admin-ajax.php'),
+                'nonce' => wp_create_nonce('filebird_fd_order_nonce'),
+                'strings' => array(
+                    'saving' => __('Saving order...', 'filebird-frontend-docs'),
+                    'saved' => __('Order saved successfully!', 'filebird-frontend-docs'),
+                    'error' => __('Error saving order. Please try again.', 'filebird-frontend-docs'),
+                    'confirm_reset' => __('Are you sure you want to reset the order? This cannot be undone.', 'filebird-frontend-docs')
+                )
+            )
+        );
+        
+        // Also localize the admin script data for folder loading
+        wp_localize_script(
+            'filebird-frontend-docs-order-manager',
+            'filebird_fd_admin',
+            array(
+                'ajax_url' => admin_url('admin-ajax.php'),
+                'nonce' => wp_create_nonce('filebird_fd_admin_nonce')
+            )
+        );
+    }
+    
+    /**
+     * AJAX handler for getting documents for ordering
+     */
+    public function ajaxGetDocumentsForOrdering() {
+        // Verify nonce and permissions
+        if (!wp_verify_nonce($_POST['nonce'], 'filebird_fd_order_nonce') || 
+            !current_user_can('manage_options')) {
+            wp_die(__('Security check failed.', 'filebird-frontend-docs'));
+        }
+        
+        $folder_id = intval($_POST['folder_id']);
+        
+        if (!$folder_id) {
+            wp_send_json_error(__('Invalid folder ID.', 'filebird-frontend-docs'));
+        }
+        
+        // Get documents with current order
+        $documents = $this->getDocumentsWithOrder($folder_id);
+        
+        wp_send_json_success($documents);
+    }
+    
+    /**
+     * AJAX handler for updating document order
+     */
+    public function ajaxUpdateDocumentOrder() {
+        // Verify nonce and permissions
+        if (!wp_verify_nonce($_POST['nonce'], 'filebird_fd_order_nonce') || 
+            !current_user_can('manage_options')) {
+            wp_die(__('Security check failed.', 'filebird-frontend-docs'));
+        }
+        
+        $folder_id = intval($_POST['folder_id']);
+        $document_order = $_POST['document_order'];
+        
+        if (!$folder_id || !is_array($document_order)) {
+            wp_send_json_error(__('Invalid data provided.', 'filebird-frontend-docs'));
+        }
+        
+        // Update the order
+        $result = $this->updateDocumentOrder($folder_id, $document_order);
+        
+        if ($result) {
+            wp_send_json_success(__('Order updated successfully.', 'filebird-frontend-docs'));
+        } else {
+            wp_send_json_error(__('Error updating order.', 'filebird-frontend-docs'));
+        }
+    }
+    
+    /**
+     * AJAX handler for getting folders in order manager
+     */
+    public function ajaxGetFoldersOrderManager() {
+        // Verify nonce and permissions
+        if (!wp_verify_nonce($_POST['nonce'], 'filebird_fd_admin_nonce') || 
+            !current_user_can('manage_options')) {
+            wp_die(__('Security check failed.', 'filebird-frontend-docs'));
+        }
+        
+        $folders_tree = FileBird_FD_Helper::getFolderTree();
+        
+        wp_send_json_success($folders_tree);
+    }
+    
+    /**
+     * AJAX handler for getting folder documents
+     */
+    public function ajaxGetFolderDocuments() {
+        // Verify nonce and permissions
+        if (!wp_verify_nonce($_POST['nonce'], 'filebird_fd_order_nonce') || 
+            !current_user_can('manage_options')) {
+            wp_die(__('Security check failed.', 'filebird-frontend-docs'));
+        }
+        
+        $folder_id = intval($_POST['folder_id']);
+        
+        if (!$folder_id) {
+            wp_send_json_error(__('Invalid folder ID.', 'filebird-frontend-docs'));
+        }
+        
+        // Get documents for the folder
+        $documents = FileBird_FD_Helper::getAttachmentsByFolderId($folder_id, array(
+            'orderby' => 'menu_order',
+            'order' => 'ASC',
+            'limit' => -1
+        ));
+        
+        $formatted_documents = array();
+        foreach ($documents as $doc) {
+            $formatted_documents[] = array(
+                'id' => $doc->ID,
+                'title' => $doc->post_title,
+                'filename' => basename($doc->file_path),
+                'file_type' => $doc->file_type,
+                'file_size' => $doc->file_size,
+                'menu_order' => $doc->menu_order,
+                'thumbnail' => $doc->thumbnail_url
+            );
+        }
+        
+        wp_send_json_success($formatted_documents);
+    }
+    
+    /**
+     * Get documents with their current order
+     */
+    private function getDocumentsWithOrder($folder_id) {
+        $documents = FileBird_FD_Helper::getAttachmentsByFolderId($folder_id, array(
+            'orderby' => 'menu_order',
+            'order' => 'ASC',
+            'limit' => -1
+        ));
+        
+        $formatted_documents = array();
+        foreach ($documents as $doc) {
+            $formatted_documents[] = array(
+                'id' => $doc->ID,
+                'title' => $doc->post_title,
+                'filename' => basename($doc->file_path),
+                'file_type' => $doc->file_type,
+                'file_size' => $doc->file_size,
+                'menu_order' => $doc->menu_order,
+                'thumbnail' => $doc->thumbnail_url,
+                'url' => $doc->file_url
+            );
+        }
+        
+        return $formatted_documents;
+    }
+    
+    /**
+     * Update document order in database
+     */
+    private function updateDocumentOrder($folder_id, $document_order) {
+        global $wpdb;
+        
+        try {
+            // Start transaction
+            $wpdb->query('START TRANSACTION');
+            
+            foreach ($document_order as $index => $document_id) {
+                $document_id = intval($document_id);
+                $menu_order = intval($index) + 1;
+                
+                $result = $wpdb->update(
+                    $wpdb->posts,
+                    array('menu_order' => $menu_order),
+                    array('ID' => $document_id, 'post_type' => 'attachment'),
+                    array('%d'),
+                    array('%d', '%s')
+                );
+                
+                if ($result === false) {
+                    throw new Exception('Failed to update document order');
+                }
+            }
+            
+            // Commit transaction
+            $wpdb->query('COMMIT');
+            
+            // Clear any caches
+            clean_post_cache($folder_id);
+            
+            return true;
+            
+        } catch (Exception $e) {
+            // Rollback transaction
+            $wpdb->query('ROLLBACK');
+            error_log('FileBird FD: Error updating document order - ' . $e->getMessage());
+            return false;
+        }
+    }
+    
+    /**
+     * Order manager page content
+     */
+    public function orderManagerPage() {
+        ?>
+        <div class="wrap">
+            <h1><?php _e('Document Order Manager', 'filebird-frontend-docs'); ?></h1>
+            
+            <?php if (!FileBird_FD_Helper::isFileBirdAvailable()): ?>
+                <div class="notice notice-error">
+                    <p><?php _e('FileBird plugin is not active. Please install and activate FileBird first.', 'filebird-frontend-docs'); ?></p>
+                </div>
+            <?php else: ?>
+                
+                <div class="filebird-fd-order-manager-container">
+                    <div class="filebird-fd-order-manager-section">
+                        <h2><?php _e('Select Folder to Reorder Documents', 'filebird-frontend-docs'); ?></h2>
+                        <p><?php _e('Choose a folder to reorder the documents within it. Drag and drop documents to change their order.', 'filebird-frontend-docs'); ?></p>
+                        
+                        <div class="filebird-fd-folder-selector">
+                            <div class="filebird-fd-folder-tree-container">
+                                <div class="filebird-fd-folder-tree-header">
+                                    <input type="text" id="folder-search" placeholder="<?php _e('Search folders...', 'filebird-frontend-docs'); ?>" class="regular-text">
+                                    <button type="button" id="expand-all-folders" class="button button-small">
+                                        <?php _e('Expand All', 'filebird-frontend-docs'); ?>
+                                    </button>
+                                    <button type="button" id="collapse-all-folders" class="button button-small">
+                                        <?php _e('Collapse All', 'filebird-frontend-docs'); ?>
+                                    </button>
+                                </div>
+                                <div id="folder-tree" class="filebird-fd-folder-tree">
+                                    <div class="filebird-fd-loading">
+                                        <span class="spinner is-active"></span>
+                                        <?php _e('Loading folders...', 'filebird-frontend-docs'); ?>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="filebird-fd-selected-folder">
+                                <label><?php _e('Selected Folder:', 'filebird-frontend-docs'); ?></label>
+                                <div id="selected-folder-display">
+                                    <span class="no-folder-selected"><?php _e('No folder selected', 'filebird-frontend-docs'); ?></span>
+                                </div>
+                                <input type="hidden" id="selected-folder-id" value="">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="filebird-fd-order-manager-section" id="document-order-section" style="display: none;">
+                        <h2><?php _e('Document Order', 'filebird-frontend-docs'); ?></h2>
+                        <p><?php _e('Drag and drop documents to reorder them. The order will be saved automatically.', 'filebird-frontend-docs'); ?></p>
+                        
+                        <div class="filebird-fd-order-controls">
+                            <button type="button" id="save-order" class="button button-primary">
+                                <?php _e('Save Order', 'filebird-frontend-docs'); ?>
+                            </button>
+                            <button type="button" id="reset-order" class="button">
+                                <?php _e('Reset to Default', 'filebird-frontend-docs'); ?>
+                            </button>
+                            <button type="button" id="preview-order" class="button">
+                                <?php _e('Preview Order', 'filebird-frontend-docs'); ?>
+                            </button>
+                        </div>
+                        
+                        <div id="document-list" class="filebird-fd-document-list">
+                            <!-- Documents will be loaded here -->
+                        </div>
+                        
+                        <div id="order-status" class="filebird-fd-order-status" style="display: none;">
+                            <span class="spinner is-active"></span>
+                            <span class="status-text"></span>
+                        </div>
+                    </div>
+                </div>
+                
+            <?php endif; ?>
+        </div>
+        <?php
+    }
+} 
