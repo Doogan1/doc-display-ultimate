@@ -85,6 +85,7 @@ class FileBirdFrontendDocuments {
         require_once FB_FD_PLUGIN_PATH . 'includes/class-document-display.php';
         require_once FB_FD_PLUGIN_PATH . 'includes/class-filebird-helper.php';
         require_once FB_FD_PLUGIN_PATH . 'includes/class-admin.php';
+        require_once FB_FD_PLUGIN_PATH . 'includes/class-document-library-cpt.php';
     }
     
     /**
@@ -99,6 +100,9 @@ class FileBirdFrontendDocuments {
         
         // Initialize admin functionality
         new FileBird_FD_Admin();
+        
+        // Initialize document library custom post type
+        new FileBird_FD_Document_Library_CPT();
     }
     
     /**
@@ -116,6 +120,13 @@ class FileBirdFrontendDocuments {
         wp_enqueue_style(
             'filebird-frontend-docs',
             FB_FD_PLUGIN_URL . 'assets/css/frontend.css',
+            array(),
+            FB_FD_VERSION
+        );
+        
+        wp_enqueue_style(
+            'filebird-frontend-docs-editor',
+            FB_FD_PLUGIN_URL . 'assets/css/editor.css',
             array(),
             FB_FD_VERSION
         );

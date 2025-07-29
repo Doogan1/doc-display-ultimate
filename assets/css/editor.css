@@ -1,0 +1,56 @@
+/* Editor Controls for Document Libraries */
+
+.doc-library-editor-controls {
+    margin-bottom: 20px;
+    padding: 10px;
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 4px;
+    text-align: center;
+}
+
+.doc-library-edit-button {
+    display: inline-block;
+    padding: 8px 16px;
+    background: #0073aa;
+    color: #fff;
+    text-decoration: none;
+    border-radius: 3px;
+    font-size: 14px;
+    font-weight: 500;
+    transition: background-color 0.2s ease;
+}
+
+.doc-library-edit-button:hover {
+    background: #005a87;
+    color: #fff;
+    text-decoration: none;
+}
+
+.doc-library-edit-button:focus {
+    outline: 2px solid #0073aa;
+    outline-offset: 2px;
+}
+
+/* Error styling */
+.doc-library-error {
+    padding: 15px;
+    background: #f8d7da;
+    border: 1px solid #f5c6cb;
+    border-radius: 4px;
+    color: #721c24;
+    margin: 10px 0;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .doc-library-editor-controls {
+        margin-bottom: 15px;
+        padding: 8px;
+    }
+    
+    .doc-library-edit-button {
+        padding: 6px 12px;
+        font-size: 13px;
+    }
+} 

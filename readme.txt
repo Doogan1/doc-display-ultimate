@@ -33,6 +33,27 @@ FileBird Frontend Documents is a powerful plugin that extends the FileBird media
 
 `[filebird_docs folder="123"]`
 
+**Document Library Custom Post Type:**
+
+The plugin now includes a custom post type called "Document Libraries" that allows content editors to easily create and manage document displays through the WordPress admin interface.
+
+**Creating a Document Library:**
+
+1. Go to **Document Libraries** in the WordPress admin menu
+2. Click **Add New**
+3. Give your library a title
+4. Configure the settings in the **Document Library Settings** meta box:
+   - Select FileBird folders to include
+   - Choose layout (Grid, List, or Table)
+   - Set display options (title, size, date, thumbnail)
+   - Configure subfolder options
+   - Set custom CSS classes
+5. Use the generated shortcode: `[render_document_library id="123"]`
+
+**Frontend Editor Button:**
+
+When viewing a document library on the frontend, administrators will see an "Edit Library" button that takes them directly to the library settings in the admin.
+
 **Available Attributes:**
 
 * `folder` (required): FileBird folder ID
@@ -75,6 +96,11 @@ With accordion folders (default closed):
 
 With accordion folders (default open):
 `[filebird_docs folder="123" include_subfolders="true" group_by_folder="true" accordion_default="open"]`
+
+**Document Library Examples:**
+
+Render a document library by ID:
+`[render_document_library id="123"]`
 
 **Requirements:**
 
@@ -135,6 +161,9 @@ Yes, the plugin includes AJAX functionality for dynamic loading of folders and d
 * Hierarchical folder display in admin
 * Subfolder recursive loading support
 * Folder grouping with section headings
+* Document Library custom post type
+* Frontend editor buttons for administrators
+* Easy-to-use admin interface for content editors
 
 == Upgrade Notice ==
 
