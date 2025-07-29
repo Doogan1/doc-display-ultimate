@@ -14,11 +14,6 @@ if (!defined('ABSPATH')) {
 extract($data);
 ?>
 <div class="<?php echo esc_attr($container_classes); ?>">
-    <?php if (!empty($folder)): ?>
-        <h3 class="filebird-docs-folder-title">
-            <?php echo esc_html(isset($folder->name) ? $folder->name : __('Documents', 'filebird-frontend-docs')); ?>
-        </h3>
-    <?php endif; ?>
     
     <?php if (!empty($attachments)): ?>
         <div class="filebird-docs-list">

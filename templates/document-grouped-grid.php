@@ -122,11 +122,6 @@ if (!function_exists('renderFolderGroupsGrid')) {
 }
 ?>
 <div class="<?php echo esc_attr($container_classes); ?>">
-    <?php if (!empty($folder)): ?>
-        <h3 class="filebird-docs-folder-title">
-            <?php echo esc_html(isset($folder->name) ? $folder->name : __('Documents', 'filebird-frontend-docs')); ?>
-        </h3>
-    <?php endif; ?>
     
     <?php if (!empty($attachments) && is_array($attachments)): ?>
         <?php renderFolderGroupsGrid($attachments, $atts, 0, $accordion_states); ?>
