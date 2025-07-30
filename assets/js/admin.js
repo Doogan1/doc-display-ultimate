@@ -326,16 +326,30 @@
         buildNestedSubfolderHtml: function(subfolders, level = 0) {
             var html = '';
             
+            // Get excluded folders from the document library settings
+            var excludedFolders = [];
+            var excludeInput = $('#document_library_exclude_folders');
+            if (excludeInput.length > 0) {
+                var excludeValue = excludeInput.val();
+                if (excludeValue) {
+                    excludedFolders = excludeValue.split(',').map(function(id) { return id.trim(); });
+                }
+            }
+            
             subfolders.forEach(function(subfolder) {
                 var hasChildren = subfolder.children && subfolder.children.length > 0;
                 var folderClass = 'subfolder-item';
                 var toggleClass = hasChildren ? 'subfolder-toggle' : 'subfolder-toggle-empty';
                 var toggleIcon = hasChildren ? 'dashicons-arrow-right-alt2' : 'dashicons-arrow-right-alt2';
                 
+                // Check if this subfolder is in the excluded list
+                var isExcluded = excludedFolders.indexOf(subfolder.id.toString()) !== -1;
+                var checkedAttr = isExcluded ? '' : ' checked';
+                
                 html += '<div class="' + folderClass + '" data-level="' + level + '">';
                 html += '<div class="subfolder-content">';
                 html += '<span class="' + toggleClass + '"><span class="dashicons ' + toggleIcon + '"></span></span>';
-                html += '<label><input type="checkbox" class="subfolder-checkbox" value="' + subfolder.id + '" checked> ' + this.escapeHtml(subfolder.name) + '</label>';
+                html += '<label><input type="checkbox" class="subfolder-checkbox" value="' + subfolder.id + '"' + checkedAttr + '> ' + this.escapeHtml(subfolder.name) + '</label>';
                 html += '</div>';
                 
                 if (hasChildren) {
@@ -604,6 +618,13 @@
             $('.subfolder-checkbox:not(:checked)').each(function() {
                 FileBirdFDAdmin.Admin.excludedSubfolders.push($(this).val());
             });
+            
+            // Update the document library exclude folders field
+            var excludeInput = $('#document_library_exclude_folders');
+            if (excludeInput.length > 0) {
+                excludeInput.val(this.excludedSubfolders.join(','));
+            }
+            
             this.updateShortcode();
         },
 
