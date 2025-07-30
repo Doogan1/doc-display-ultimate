@@ -42,7 +42,6 @@ class FileBird_FD_Shortcode_Handler {
             'class' => '',
             'include_subfolders' => 'false',
             'group_by_folder' => 'false',
-            'accordion_default' => 'closed',
             'accordion_states' => '',
             'exclude_folders' => ''
         ), $atts, 'filebird_docs');
@@ -61,7 +60,6 @@ class FileBird_FD_Shortcode_Handler {
         $atts['show_thumbnail'] = filter_var($atts['show_thumbnail'], FILTER_VALIDATE_BOOLEAN);
         $atts['include_subfolders'] = filter_var($atts['include_subfolders'], FILTER_VALIDATE_BOOLEAN);
         $atts['group_by_folder'] = filter_var($atts['group_by_folder'], FILTER_VALIDATE_BOOLEAN);
-        $atts['accordion_default'] = sanitize_text_field($atts['accordion_default']);
         
         // Parse exclude_folders attribute
         $exclude_folders = array();
@@ -69,17 +67,43 @@ class FileBird_FD_Shortcode_Handler {
             $exclude_folders = array_map('intval', explode(',', $atts['exclude_folders']));
         }
         
-        // Parse accordion_states attribute
+        // Parse accordion_states attribute (base64 encoded JSON format)
         $accordion_states = array();
         if (!empty($atts['accordion_states'])) {
-            $states_array = explode(',', $atts['accordion_states']);
-            foreach ($states_array as $state_item) {
-                $parts = explode(':', trim($state_item));
-                if (count($parts) === 2) {
-                    $folder_id = intval($parts[0]);
-                    $state = sanitize_text_field($parts[1]);
-                    if ($state === 'open' || $state === 'closed') {
-                        $accordion_states[$folder_id] = $state;
+            try {
+                // First, try to base64 decode the value
+                $decoded_states = base64_decode($atts['accordion_states']);
+                if ($decoded_states !== false) {
+                    $states_json = json_decode($decoded_states, true);
+                    if (is_array($states_json)) {
+                        foreach ($states_json as $folder_id => $is_open) {
+                            $folder_id = intval($folder_id);
+                            $state = $is_open ? 'open' : 'closed';
+                            $accordion_states[$folder_id] = $state;
+                        }
+                    }
+                } else {
+                    // Fallback: try to parse as direct JSON (for backward compatibility)
+                    $states_json = json_decode($atts['accordion_states'], true);
+                    if (is_array($states_json)) {
+                        foreach ($states_json as $folder_id => $is_open) {
+                            $folder_id = intval($folder_id);
+                            $state = $is_open ? 'open' : 'closed';
+                            $accordion_states[$folder_id] = $state;
+                        }
+                    }
+                }
+            } catch (Exception $e) {
+                // Fallback to old format if JSON parsing fails
+                $states_array = explode(',', $atts['accordion_states']);
+                foreach ($states_array as $state_item) {
+                    $parts = explode(':', trim($state_item));
+                    if (count($parts) === 2) {
+                        $folder_id = intval($parts[0]);
+                        $state = sanitize_text_field($parts[1]);
+                        if ($state === 'open' || $state === 'closed') {
+                            $accordion_states[$folder_id] = $state;
+                        }
                     }
                 }
             }
@@ -123,6 +147,8 @@ class FileBird_FD_Shortcode_Handler {
         
         // Start output buffering
         ob_start();
+        
+
         
         // Include template
         $this->renderTemplate($atts['layout'], array(

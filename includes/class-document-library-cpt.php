@@ -128,9 +128,9 @@ class FileBird_FD_Document_Library_CPT {
         $show_thumbnail = get_post_meta($post->ID, '_document_library_show_thumbnail', true) !== 'false';
         $include_subfolders = get_post_meta($post->ID, '_document_library_include_subfolders', true) === 'true';
         $group_by_folder = get_post_meta($post->ID, '_document_library_group_by_folder', true) === 'true';
-        $accordion_default = get_post_meta($post->ID, '_document_library_accordion_default', true) ?: 'closed';
         $exclude_folders = get_post_meta($post->ID, '_document_library_exclude_folders', true);
         $custom_class = get_post_meta($post->ID, '_document_library_custom_class', true);
+        $accordion_states = get_post_meta($post->ID, '_document_library_accordion_states', true) ?: '{}';
         
         ?>
         <table class="form-table">
@@ -163,6 +163,7 @@ class FileBird_FD_Document_Library_CPT {
                                 <span class="no-folder-selected"><?php _e('No folders selected', 'filebird-frontend-docs'); ?></span>
                             </div>
                             <input type="hidden" id="document_library_folders" name="document_library_folders" value="<?php echo esc_attr($folders); ?>" />
+                            <input type="hidden" id="document_library_accordion_states" name="document_library_accordion_states" value="<?php echo esc_attr($accordion_states); ?>" />
                             
                             <div id="subfolder-controls" style="display: none;">
                                 <label><?php _e('Subfolder Selection:', 'filebird-frontend-docs'); ?></label>
@@ -344,10 +345,7 @@ class FileBird_FD_Document_Library_CPT {
                         <?php _e('Group by Folder', 'filebird-frontend-docs'); ?>
                     </label><br>
                     
-                    <label>
-                        <input type="checkbox" name="document_library_accordion_default" value="open" <?php checked($accordion_default, 'open'); ?> />
-                        <?php _e('Folders Open by Default', 'filebird-frontend-docs'); ?>
-                    </label>
+
                 </td>
             </tr>
             
@@ -694,8 +692,8 @@ class FileBird_FD_Document_Library_CPT {
             'document_library_show_thumbnail',
             'document_library_include_subfolders',
             'document_library_group_by_folder',
-            'document_library_accordion_default',
             'document_library_exclude_folders',
+            'document_library_accordion_states',
             'document_library_custom_class'
         );
         
@@ -752,9 +750,9 @@ class FileBird_FD_Document_Library_CPT {
         $show_thumbnail = get_post_meta($post_id, '_document_library_show_thumbnail', true) !== 'false';
         $include_subfolders = get_post_meta($post_id, '_document_library_include_subfolders', true) === 'true';
         $group_by_folder = get_post_meta($post_id, '_document_library_group_by_folder', true) === 'true';
-        $accordion_default = get_post_meta($post_id, '_document_library_accordion_default', true) ?: 'closed';
         $exclude_folders = get_post_meta($post_id, '_document_library_exclude_folders', true);
         $custom_class = get_post_meta($post_id, '_document_library_custom_class', true);
+        $accordion_states = get_post_meta($post_id, '_document_library_accordion_states', true) ?: '{}';
         
         // Convert to shortcode attributes
         $shortcode_atts = array(
@@ -770,8 +768,8 @@ class FileBird_FD_Document_Library_CPT {
             'show_thumbnail' => $show_thumbnail ? 'true' : 'false',
             'include_subfolders' => $include_subfolders ? 'true' : 'false',
             'group_by_folder' => $group_by_folder ? 'true' : 'false',
-            'accordion_default' => $accordion_default,
             'exclude_folders' => $exclude_folders,
+            'accordion_states' => $accordion_states,
             'class' => $custom_class
         );
         
@@ -779,7 +777,12 @@ class FileBird_FD_Document_Library_CPT {
         $shortcode_parts = array();
         foreach ($shortcode_atts as $key => $value) {
             if ($value !== '' && $value !== null) {
-                $shortcode_parts[] = $key . '="' . esc_attr($value) . '"';
+                // Base64 encode JSON values to avoid shortcode parsing issues
+                if ($key === 'accordion_states') {
+                    $shortcode_parts[] = $key . '="' . base64_encode($value) . '"';
+                } else {
+                    $shortcode_parts[] = $key . '="' . esc_attr($value) . '"';
+                }
             }
         }
         
@@ -824,8 +827,7 @@ class FileBird_FD_Document_Library_CPT {
             return;
         }
         
-        // Debug: Log that we're loading scripts for document_library
-        error_log('FileBird FD: Loading admin scripts for document_library post type');
+
         
         // Enqueue WordPress dashicons for folder tree icons
         wp_enqueue_style('dashicons');
@@ -898,8 +900,7 @@ class FileBird_FD_Document_Library_CPT {
             )
         );
         
-        // Debug: Log that scripts have been enqueued
-        error_log('FileBird FD: Admin scripts enqueued for document_library');
+
     }
     
     /**
