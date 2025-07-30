@@ -22,6 +22,7 @@ class FileBird_FD_Document_Library_CPT {
         add_action('wp_ajax_filebird_fd_get_folders_order_manager', array($this, 'ajaxGetFoldersOrderManager'));
         add_action('wp_ajax_filebird_fd_get_documents_for_ordering', array($this, 'ajaxGetDocumentsForOrdering'));
         add_action('wp_ajax_filebird_fd_update_document_order', array($this, 'ajaxUpdateDocumentOrder'));
+        add_action('wp_ajax_filebird_fd_scan_library_usage', array($this, 'ajaxScanLibraryUsage'));
     }
     
     /**
@@ -95,6 +96,15 @@ class FileBird_FD_Document_Library_CPT {
             'document_library',
             'side',
             'high'
+        );
+        
+        add_meta_box(
+            'document_library_usage',
+            __('Library Usage', 'filebird-frontend-docs'),
+            array($this, 'renderUsageMetaBox'),
+            'document_library',
+            'side',
+            'default'
         );
     }
     
@@ -484,6 +494,111 @@ class FileBird_FD_Document_Library_CPT {
     }
     
     /**
+     * Render the usage meta box
+     */
+    public function renderUsageMetaBox($post) {
+        $usage = get_post_meta($post->ID, '_document_library_usage', true);
+        $last_scan = get_post_meta($post->ID, '_document_library_usage_last_scan', true);
+        
+        ?>
+        <div class="document-library-usage">
+            <p><?php _e('This library is currently used on the following pages:', 'filebird-frontend-docs'); ?></p>
+            
+            <div id="usage-list">
+                <?php if (!empty($usage)): ?>
+                    <ul class="usage-list">
+                        <?php foreach ($usage as $item): ?>
+                            <li>
+                                <span class="usage-type"><?php echo esc_html(ucfirst($item['type'])); ?></span>
+                                <a href="<?php echo esc_url($item['edit_url']); ?>" target="_blank" class="usage-title">
+                                    <?php echo esc_html($item['title']); ?>
+                                </a>
+                                <a href="<?php echo esc_url($item['url']); ?>" target="_blank" class="usage-view">
+                                    <?php _e('View', 'filebird-frontend-docs'); ?>
+                                </a>
+                            </li>
+                        <?php endforeach; ?>
+                    </ul>
+                    <?php if ($last_scan): ?>
+                        <p class="usage-last-scan">
+                            <small><?php printf(__('Last scanned: %s', 'filebird-frontend-docs'), date('M j, Y g:i A', strtotime($last_scan))); ?></small>
+                        </p>
+                    <?php endif; ?>
+                <?php else: ?>
+                    <p class="no-usage"><?php _e('No usage found. This library may not be used anywhere yet.', 'filebird-frontend-docs'); ?></p>
+                <?php endif; ?>
+            </div>
+            
+            <div class="usage-actions">
+                <button type="button" id="scan-usage" class="button button-small">
+                    <?php _e('Scan for Usage', 'filebird-frontend-docs'); ?>
+                </button>
+                <span id="scan-status" style="display: none;">
+                    <span class="spinner is-active"></span>
+                    <?php _e('Scanning...', 'filebird-frontend-docs'); ?>
+                </span>
+            </div>
+        </div>
+        
+        <script>
+        jQuery(document).ready(function($) {
+            $('#scan-usage').on('click', function() {
+                var $button = $(this);
+                var $status = $('#scan-status');
+                var $usageList = $('#usage-list');
+                
+                $button.prop('disabled', true);
+                $status.show();
+                
+                $.ajax({
+                    url: filebird_fd_order.ajax_url,
+                    type: 'POST',
+                    data: {
+                        action: 'filebird_fd_scan_library_usage',
+                        library_id: <?php echo $post->ID; ?>,
+                        nonce: filebird_fd_order.nonce
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            var usage = response.data;
+                            var html = '';
+                            
+                            if (usage.length > 0) {
+                                html = '<ul class="usage-list">';
+                                usage.forEach(function(item) {
+                                    html += '<li>';
+                                    html += '<span class="usage-type">' + item.type.charAt(0).toUpperCase() + item.type.slice(1) + '</span>';
+                                    html += '<a href="' + item.edit_url + '" target="_blank" class="usage-title">' + item.title + '</a>';
+                                    html += '<a href="' + item.url + '" target="_blank" class="usage-view">View</a>';
+                                    html += '</li>';
+                                });
+                                html += '</ul>';
+                                html += '<p class="usage-last-scan"><small>Last scanned: ' + new Date().toLocaleString() + '</small></p>';
+                            } else {
+                                html = '<p class="no-usage">No usage found. This library may not be used anywhere yet.</p>';
+                            }
+                            
+                            $usageList.html(html);
+                        } else {
+                            alert('Error scanning for usage: ' + (response.data || 'Unknown error'));
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('Error scanning usage:', error);
+                        alert('Error scanning for usage. Please try again.');
+                    },
+                    complete: function() {
+                        $button.prop('disabled', false);
+                        $status.hide();
+                    }
+                });
+            });
+        });
+        </script>
+        <?php
+    }
+    
+    /**
      * Save meta box data
      */
     public function saveMetaBoxes($post_id) {
@@ -721,6 +836,110 @@ class FileBird_FD_Document_Library_CPT {
         
         // Debug: Log that scripts have been enqueued
         error_log('FileBird FD: Admin scripts enqueued for document_library');
+    }
+    
+    /**
+     * AJAX handler for scanning library usage
+     */
+    public function ajaxScanLibraryUsage() {
+        // Verify nonce and permissions
+        if (!wp_verify_nonce($_POST['nonce'], 'filebird_fd_order_nonce') || 
+            !current_user_can('manage_options')) {
+            wp_die(__('Security check failed.', 'filebird-frontend-docs'));
+        }
+        
+        $library_id = intval($_POST['library_id']);
+        
+        if (!$library_id) {
+            wp_send_json_error(__('Invalid library ID.', 'filebird-frontend-docs'));
+        }
+        
+        // Scan for usage
+        $usage = $this->scanLibraryUsage($library_id);
+        
+        // Update the meta fields
+        update_post_meta($library_id, '_document_library_usage', $usage);
+        update_post_meta($library_id, '_document_library_usage_last_scan', current_time('mysql'));
+        
+        wp_send_json_success($usage);
+    }
+    
+    /**
+     * Scan for library usage across posts and pages
+     */
+    private function scanLibraryUsage($library_id) {
+        $usage = array();
+        $shortcode = '[render_document_library id="' . $library_id . '"]';
+        
+        // Search in posts
+        $posts = get_posts(array(
+            'post_type' => 'post',
+            'post_status' => 'publish',
+            'posts_per_page' => -1,
+            'meta_query' => array(
+                array(
+                    'key' => '_thumbnail_id',
+                    'compare' => 'EXISTS'
+                )
+            )
+        ));
+        
+        foreach ($posts as $post) {
+            if (strpos($post->post_content, $shortcode) !== false) {
+                $usage[] = array(
+                    'type' => 'post',
+                    'id' => $post->ID,
+                    'title' => $post->post_title,
+                    'url' => get_permalink($post->ID),
+                    'edit_url' => get_edit_post_link($post->ID)
+                );
+            }
+        }
+        
+        // Search in pages
+        $pages = get_posts(array(
+            'post_type' => 'page',
+            'post_status' => 'publish',
+            'posts_per_page' => -1
+        ));
+        
+        foreach ($pages as $page) {
+            if (strpos($page->post_content, $shortcode) !== false) {
+                $usage[] = array(
+                    'type' => 'page',
+                    'id' => $page->ID,
+                    'title' => $page->post_title,
+                    'url' => get_permalink($page->ID),
+                    'edit_url' => get_edit_post_link($page->ID)
+                );
+            }
+        }
+        
+        // Search in custom post types (excluding document_library itself)
+        $custom_post_types = get_post_types(array('public' => true, '_builtin' => false));
+        unset($custom_post_types['document_library']);
+        
+        foreach ($custom_post_types as $post_type) {
+            $custom_posts = get_posts(array(
+                'post_type' => $post_type,
+                'post_status' => 'publish',
+                'posts_per_page' => -1
+            ));
+            
+            foreach ($custom_posts as $custom_post) {
+                if (strpos($custom_post->post_content, $shortcode) !== false) {
+                    $usage[] = array(
+                        'type' => $post_type,
+                        'id' => $custom_post->ID,
+                        'title' => $custom_post->post_title,
+                        'url' => get_permalink($custom_post->ID),
+                        'edit_url' => get_edit_post_link($custom_post->ID)
+                    );
+                }
+            }
+        }
+        
+        return $usage;
     }
     
     /**

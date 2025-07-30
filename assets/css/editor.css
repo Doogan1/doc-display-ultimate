@@ -29,7 +29,7 @@
     align-items: center;
     padding: 6px 12px;
     background: rgba(255, 255, 255, 0.2);
-    color: #fff;
+    color: #fff !important;
     text-decoration: none;
     border-radius: 4px;
     font-size: 13px;
@@ -40,7 +40,7 @@
 
 .doc-library-edit-button:hover {
     background: rgba(255, 255, 255, 0.3);
-    color: #fff;
+    color: #fff !important;
     text-decoration: none;
     transform: translateY(-1px);
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
@@ -138,4 +138,94 @@
         margin-bottom: 15px;
         padding: 8px;
     }
+}
+
+/* Document Library Usage Styles */
+.document-library-usage {
+    margin: 10px 0;
+}
+
+.usage-list {
+    margin: 10px 0;
+    padding: 0;
+    list-style: none;
+}
+
+.usage-list li {
+    display: flex;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid #f0f0f0;
+    gap: 10px;
+}
+
+.usage-list li:last-child {
+    border-bottom: none;
+}
+
+.usage-type {
+    background: #0073aa;
+    color: #fff;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: uppercase;
+    min-width: 40px;
+    text-align: center;
+}
+
+.usage-title {
+    flex: 1;
+    font-weight: 500;
+    text-decoration: none;
+    color: #0073aa;
+}
+
+.usage-title:hover {
+    color: #005a87;
+    text-decoration: underline;
+}
+
+.usage-view {
+    font-size: 12px;
+    color: #666;
+    text-decoration: none;
+    padding: 2px 6px;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+    background: #f9f9f9;
+}
+
+.usage-view:hover {
+    background: #f0f0f0;
+    color: #333;
+}
+
+.no-usage {
+    color: #666;
+    font-style: italic;
+    margin: 10px 0;
+}
+
+.usage-last-scan {
+    margin-top: 10px;
+    color: #666;
+    font-size: 12px;
+}
+
+.usage-actions {
+    margin-top: 15px;
+    padding-top: 10px;
+    border-top: 1px solid #f0f0f0;
+}
+
+#scan-status {
+    margin-left: 10px;
+    color: #666;
+    font-size: 12px;
+}
+
+#scan-status .spinner {
+    margin-right: 5px;
 } 
