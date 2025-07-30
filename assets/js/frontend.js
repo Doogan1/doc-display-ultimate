@@ -32,17 +32,16 @@
                 
                 // Toggle content visibility
                 if (isExpanded) {
-                    // Closing the folder - hide content and all nested folders
+                    // Closing the folder - hide content but preserve nested accordion states
                     $content.removeClass('filebird-docs-accordion-open').hide();
                     
-                    // Close all nested accordions within this section
-                    $content.find('.filebird-docs-accordion-toggle').attr('aria-expanded', 'false');
-                    $content.find('.filebird-docs-accordion-content').removeClass('filebird-docs-accordion-open').hide();
+                    // Don't close nested accordions - let them maintain their state
+                    // They will be hidden by the parent being closed, but their state is preserved
                 } else {
-                    // Opening the folder - show content but keep nested accordions in their current state
+                    // Opening the folder - show content and restore nested accordion states
                     $content.addClass('filebird-docs-accordion-open').show();
                     
-                    // Ensure nested accordions maintain their proper state
+                    // Restore nested accordion states based on their aria-expanded attributes
                     $content.find('.filebird-docs-accordion-content').each(function() {
                         var $nestedContent = $(this);
                         var $nestedToggle = $nestedContent.siblings('.filebird-docs-accordion-header').find('.filebird-docs-accordion-toggle');
