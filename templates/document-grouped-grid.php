@@ -21,14 +21,21 @@ if (!function_exists('renderFolderGroupsGrid')) {
         foreach ($folder_groups as $folder_group) {
             $has_children = !empty($folder_group['children']);
             
+
+            
             // Determine if this folder should be open by default
             $is_open = false;
-            if (isset($accordion_states[$folder_group['folder_id']])) {
-                $is_open = ($accordion_states[$folder_group['folder_id']] === 'open');
-            } else {
-                // Fallback to global accordion_default
-                $is_open = $atts['accordion_default'] === 'open';
+            $folder_id = $folder_group['folder_id'];
+            
+            // Try both string and integer versions of the folder ID
+            if (isset($accordion_states[$folder_id])) {
+                $is_open = ($accordion_states[$folder_id] === 'open');
+            } elseif (isset($accordion_states[(string)$folder_id])) {
+                $is_open = ($accordion_states[(string)$folder_id] === 'open');
+            } elseif (isset($accordion_states[(int)$folder_id])) {
+                $is_open = ($accordion_states[(int)$folder_id] === 'open');
             }
+            // Default to closed if no accordion state is set
             
             ?>
             <div class="filebird-docs-folder-section filebird-docs-accordion-section" data-level="<?php echo $level; ?>">
@@ -121,6 +128,7 @@ if (!function_exists('renderFolderGroupsGrid')) {
     }
 }
 ?>
+
 <div class="<?php echo esc_attr($container_classes); ?>">
     
     <?php if (!empty($attachments) && is_array($attachments)): ?>

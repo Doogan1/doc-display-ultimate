@@ -1,0 +1,303 @@
+/* Document Order Manager Styles */
+
+.filebird-fd-order-manager-container {
+    max-width: 1200px;
+    margin: 20px 0;
+}
+
+.filebird-fd-order-manager-section {
+    background: #fff;
+    border: 1px solid #e1e1e1;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.filebird-fd-order-manager-section h2 {
+    margin-top: 0;
+    color: #23282d;
+    border-bottom: 2px solid #0073aa;
+    padding-bottom: 10px;
+}
+
+/* Folder Selector Styles */
+.filebird-fd-folder-selector {
+    display: flex;
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.filebird-fd-folder-tree-container {
+    flex: 2;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background: #f9f9f9;
+}
+
+.filebird-fd-selected-folder {
+    flex: 1;
+    padding: 15px;
+    background: #f0f8ff;
+    border: 1px solid #0073aa;
+    border-radius: 4px;
+}
+
+.filebird-fd-selected-folder label {
+    font-weight: bold;
+    color: #0073aa;
+    margin-bottom: 10px;
+    display: block;
+}
+
+/* Document List Styles */
+.filebird-fd-document-list {
+    margin-top: 20px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background: #fff;
+    min-height: 200px;
+}
+
+.filebird-fd-document-item {
+    display: flex;
+    align-items: center;
+    padding: 12px 15px;
+    border-bottom: 1px solid #eee;
+    background: #fff;
+    cursor: move;
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.filebird-fd-document-item:hover {
+    background: #f8f9fa;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.filebird-fd-document-item.ui-sortable-helper {
+    background: #fff;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    transform: rotate(2deg);
+    z-index: 1000;
+}
+
+.filebird-fd-document-item.ui-sortable-placeholder {
+    background: #e3f2fd;
+    border: 2px dashed #0073aa;
+    height: 60px;
+    margin: 0;
+    padding: 0;
+}
+
+.filebird-fd-document-item:last-child {
+    border-bottom: none;
+}
+
+.filebird-fd-document-drag-handle {
+    width: 20px;
+    height: 20px;
+    margin-right: 15px;
+    color: #999;
+    cursor: move;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.filebird-fd-document-drag-handle::before {
+    content: "⋮⋮";
+    font-size: 16px;
+    line-height: 1;
+}
+
+.filebird-fd-document-thumbnail {
+    width: 40px;
+    height: 40px;
+    margin-right: 15px;
+    border-radius: 4px;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.filebird-fd-document-thumbnail img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.filebird-fd-document-thumbnail .file-icon {
+    width: 100%;
+    height: 100%;
+    background: #f0f0f0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    color: #666;
+}
+
+.filebird-fd-document-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.filebird-fd-document-title {
+    font-weight: 500;
+    color: #333;
+    margin-bottom: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.filebird-fd-document-meta {
+    font-size: 12px;
+    color: #666;
+    display: flex;
+    gap: 15px;
+}
+
+.filebird-fd-document-filename {
+    font-family: monospace;
+    background: #f5f5f5;
+    padding: 2px 6px;
+    border-radius: 3px;
+}
+
+.filebird-fd-document-order {
+    width: 60px;
+    text-align: center;
+    font-weight: bold;
+    color: #0073aa;
+    background: #e3f2fd;
+    padding: 4px 8px;
+    border-radius: 4px;
+    margin-left: 15px;
+    flex-shrink: 0;
+}
+
+/* Order Controls */
+.filebird-fd-order-controls {
+    margin-bottom: 20px;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 4px;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.filebird-fd-order-controls .button {
+    margin: 0;
+}
+
+/* Order Status */
+.filebird-fd-order-status {
+    padding: 10px 15px;
+    border-radius: 4px;
+    margin-top: 15px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.filebird-fd-order-status.saving {
+    background: #fff3cd;
+    border: 1px solid #ffeaa7;
+    color: #856404;
+}
+
+.filebird-fd-order-status.success {
+    background: #d4edda;
+    border: 1px solid #c3e6cb;
+    color: #155724;
+}
+
+.filebird-fd-order-status.error {
+    background: #f8d7da;
+    border: 1px solid #f5c6cb;
+    color: #721c24;
+}
+
+/* Empty State */
+.filebird-fd-document-list.empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #666;
+    font-style: italic;
+    padding: 40px;
+}
+
+/* Loading State */
+.filebird-fd-document-list.loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+}
+
+.filebird-fd-document-list.loading .spinner {
+    margin-right: 10px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .filebird-fd-folder-selector {
+        flex-direction: column;
+    }
+    
+    .filebird-fd-document-item {
+        padding: 10px;
+    }
+    
+    .filebird-fd-document-meta {
+        flex-direction: column;
+        gap: 5px;
+    }
+    
+    .filebird-fd-order-controls {
+        flex-wrap: wrap;
+    }
+    
+    .filebird-fd-document-order {
+        width: 50px;
+        font-size: 12px;
+        padding: 3px 6px;
+    }
+}
+
+/* File Type Icons */
+.file-icon-pdf::before { content: "📄"; }
+.file-icon-doc::before { content: "📝"; }
+.file-icon-xls::before { content: "📊"; }
+.file-icon-ppt::before { content: "📋"; }
+.file-icon-img::before { content: "🖼️"; }
+.file-icon-video::before { content: "🎥"; }
+.file-icon-audio::before { content: "🎵"; }
+.file-icon-archive::before { content: "📦"; }
+.file-icon-other::before { content: "📎"; }
+
+/* Animation for drag and drop */
+@keyframes dragPulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.02); }
+    100% { transform: scale(1); }
+}
+
+.filebird-fd-document-item.ui-sortable-helper {
+    animation: dragPulse 0.3s ease-in-out;
+}
+
+/* Focus states for accessibility */
+.filebird-fd-document-item:focus {
+    outline: 2px solid #0073aa;
+    outline-offset: 2px;
+}
+
+.filebird-fd-document-drag-handle:focus {
+    outline: 2px solid #0073aa;
+    outline-offset: 2px;
+    border-radius: 2px;
+} 

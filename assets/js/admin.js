@@ -134,6 +134,8 @@
                     $('#accordion-state-controls').hide();
                 }
             });
+            
+
 
             // Copy shortcode button
             $('#copy-shortcode').on('click', function() {
@@ -278,15 +280,30 @@
         },
 
         populateAccordionStateControls: function(folderId) {
+            // Get parent folder information
+            var parentFolder = this.findFolderById(this.folderTree, folderId);
             var subfolders = this.findSubfoldersHierarchical(folderId);
             
+            // Build HTML starting with parent folder
+            var html = '';
+            
+            if (parentFolder) {
+                // Add parent folder to accordion state controls
+                html += this.buildParentFolderAccordionStateHtml(parentFolder);
+            }
+            
             if (subfolders.length > 0) {
-                var html = this.buildNestedAccordionStateHtml(subfolders);
-                
+                html += this.buildNestedAccordionStateHtml(subfolders);
+            }
+            
+            if (parentFolder || subfolders.length > 0) {
                 $('#accordion-state-list').html(html);
                 $('#accordion-state-controls').show();
                 
-                // Initialize accordion states
+                // Initialize accordion states from saved settings
+                this.initializeAccordionStatesFromSettings();
+                
+                // Update accordion states
                 this.updateAccordionStates();
             } else {
                 $('#accordion-state-controls').hide();
@@ -323,8 +340,34 @@
             }.bind(this));
         },
 
+        findFolderById: function(folders, folderId) {
+            for (var i = 0; i < folders.length; i++) {
+                var folder = folders[i];
+                if (folder.id == folderId) {
+                    return folder;
+                }
+                if (folder.children && folder.children.length > 0) {
+                    var found = this.findFolderById(folder.children, folderId);
+                    if (found) {
+                        return found;
+                    }
+                }
+            }
+            return null;
+        },
+
         buildNestedSubfolderHtml: function(subfolders, level = 0) {
             var html = '';
+            
+            // Get excluded folders from the document library settings
+            var excludedFolders = [];
+            var excludeInput = $('#document_library_exclude_folders');
+            if (excludeInput.length > 0) {
+                var excludeValue = excludeInput.val();
+                if (excludeValue) {
+                    excludedFolders = excludeValue.split(',').map(function(id) { return id.trim(); });
+                }
+            }
             
             subfolders.forEach(function(subfolder) {
                 var hasChildren = subfolder.children && subfolder.children.length > 0;
@@ -332,10 +375,14 @@
                 var toggleClass = hasChildren ? 'subfolder-toggle' : 'subfolder-toggle-empty';
                 var toggleIcon = hasChildren ? 'dashicons-arrow-right-alt2' : 'dashicons-arrow-right-alt2';
                 
+                // Check if this subfolder is in the excluded list
+                var isExcluded = excludedFolders.indexOf(subfolder.id.toString()) !== -1;
+                var checkedAttr = isExcluded ? '' : ' checked';
+                
                 html += '<div class="' + folderClass + '" data-level="' + level + '">';
                 html += '<div class="subfolder-content">';
                 html += '<span class="' + toggleClass + '"><span class="dashicons ' + toggleIcon + '"></span></span>';
-                html += '<label><input type="checkbox" class="subfolder-checkbox" value="' + subfolder.id + '" checked> ' + this.escapeHtml(subfolder.name) + '</label>';
+                html += '<label><input type="checkbox" class="subfolder-checkbox" value="' + subfolder.id + '"' + checkedAttr + '> ' + this.escapeHtml(subfolder.name) + '</label>';
                 html += '</div>';
                 
                 if (hasChildren) {
@@ -353,18 +400,58 @@
         buildNestedAccordionStateHtml: function(subfolders, level = 0) {
             var html = '';
             
+            // Get excluded folders from the document library settings
+            var excludedFolders = [];
+            var excludeInput = $('#document_library_exclude_folders');
+            if (excludeInput.length > 0) {
+                var excludeValue = excludeInput.val();
+                if (excludeValue) {
+                    excludedFolders = excludeValue.split(',').map(function(id) { return id.trim(); });
+                }
+            }
+            
+            // Get saved accordion states
+            var savedAccordionStates = {};
+            var accordionStatesInput = $('#document_library_accordion_states');
+            if (accordionStatesInput.length > 0) {
+                var accordionStatesValue = accordionStatesInput.val();
+                if (accordionStatesValue) {
+                    try {
+                        savedAccordionStates = JSON.parse(accordionStatesValue);
+                    } catch (e) {
+                        console.warn('Failed to parse accordion states:', e);
+                        savedAccordionStates = {};
+                    }
+                }
+            }
+            
+
+            
             subfolders.forEach(function(subfolder) {
+                // Skip excluded folders and their entire subtree
+                if (excludedFolders.indexOf(subfolder.id.toString()) !== -1) {
+                    // Skip this folder and all its children completely
+                    return;
+                }
+                
                 var hasChildren = subfolder.children && subfolder.children.length > 0;
                 var folderClass = 'accordion-state-item';
                 var toggleClass = hasChildren ? 'accordion-state-toggle' : 'accordion-state-toggle-empty';
                 var toggleIcon = hasChildren ? 'dashicons-arrow-right-alt2' : 'dashicons-arrow-right-alt2';
                 
+                // Set state based on saved accordion states or default to closed
+                var savedState = savedAccordionStates[subfolder.id.toString()];
+                var openChecked = (savedState === true) ? ' checked' : '';
+                var closedChecked = (savedState === false || savedState === undefined) ? ' checked' : '';
+                
+
+                
                 html += '<div class="' + folderClass + '" data-level="' + level + '">';
                 html += '<div class="accordion-state-content">';
                 html += '<span class="' + toggleClass + '"><span class="dashicons ' + toggleIcon + '"></span></span>';
                 html += '<div class="accordion-state-controls">';
-                html += '<label><input type="radio" class="accordion-state-radio" name="accordion_state_' + subfolder.id + '" value="' + subfolder.id + '_open" checked> ' + this.escapeHtml(subfolder.name) + ' - Open</label>';
-                html += '<label><input type="radio" class="accordion-state-radio" name="accordion_state_' + subfolder.id + '" value="' + subfolder.id + '_closed"> ' + this.escapeHtml(subfolder.name) + ' - Closed</label>';
+                html += '<label><input type="radio" class="accordion-state-radio" name="accordion_state_' + subfolder.id + '" value="' + subfolder.id + '_open"' + openChecked + '> ' + this.escapeHtml(subfolder.name) + ' - Open</label>';
+                html += '<label><input type="radio" class="accordion-state-radio" name="accordion_state_' + subfolder.id + '" value="' + subfolder.id + '_closed"' + closedChecked + '> ' + this.escapeHtml(subfolder.name) + ' - Closed</label>';
                 html += '</div>';
                 html += '</div>';
                 
@@ -376,6 +463,41 @@
                 
                 html += '</div>';
             }.bind(this));
+            
+            return html;
+        },
+
+        buildParentFolderAccordionStateHtml: function(parentFolder) {
+            var html = '';
+            
+            // Get saved accordion states
+            var savedAccordionStates = {};
+            var accordionStatesInput = $('#document_library_accordion_states');
+            if (accordionStatesInput.length > 0) {
+                var accordionStatesValue = accordionStatesInput.val();
+                if (accordionStatesValue) {
+                    try {
+                        savedAccordionStates = JSON.parse(accordionStatesValue);
+                    } catch (e) {
+                        console.warn('Failed to parse accordion states:', e);
+                        savedAccordionStates = {};
+                    }
+                }
+            }
+            
+            // Set state based on saved accordion states or default to closed
+            var savedState = savedAccordionStates[parentFolder.id.toString()];
+            var openChecked = (savedState === true) ? ' checked' : '';
+            var closedChecked = (savedState === false || savedState === undefined) ? ' checked' : '';
+            
+            html += '<div class="accordion-state-item accordion-state-parent" data-level="0">';
+            html += '<div class="accordion-state-content">';
+            html += '<div class="accordion-state-controls">';
+            html += '<label><input type="radio" class="accordion-state-radio" name="accordion_state_' + parentFolder.id + '" value="' + parentFolder.id + '_open"' + openChecked + '> <strong>' + this.escapeHtml(parentFolder.name) + ' (Parent Folder) - Open</strong></label>';
+            html += '<label><input type="radio" class="accordion-state-radio" name="accordion_state_' + parentFolder.id + '" value="' + parentFolder.id + '_closed"' + closedChecked + '> <strong>' + this.escapeHtml(parentFolder.name) + ' (Parent Folder) - Closed</strong></label>';
+            html += '</div>';
+            html += '</div>';
+            html += '</div>';
             
             return html;
         },
@@ -604,6 +726,13 @@
             $('.subfolder-checkbox:not(:checked)').each(function() {
                 FileBirdFDAdmin.Admin.excludedSubfolders.push($(this).val());
             });
+            
+            // Update the document library exclude folders field
+            var excludeInput = $('#document_library_exclude_folders');
+            if (excludeInput.length > 0) {
+                excludeInput.val(this.excludedSubfolders.join(','));
+            }
+            
             this.updateShortcode();
         },
 
@@ -638,7 +767,21 @@
                     FileBirdFDAdmin.Admin.accordionStates[folderId] = (state === 'open');
                 }
             });
+            
+            // Save accordion states to hidden field
+            var accordionStatesInput = $('#document_library_accordion_states');
+            if (accordionStatesInput.length > 0) {
+                var jsonValue = JSON.stringify(this.accordionStates);
+                accordionStatesInput.val(jsonValue);
+            }
+            
             this.updateShortcode();
+        },
+        
+        initializeAccordionStatesFromSettings: function() {
+            // This function can be used to initialize accordion states from saved settings
+            // For now, the default state is handled in buildNestedAccordionStateHtml
+            // based on the accordion_default checkbox
         },
 
         openAllAccordions: function() {

@@ -25,10 +25,8 @@ if (!function_exists('renderFolderGroupsTable')) {
             $is_open = false;
             if (isset($accordion_states[$folder_group['folder_id']])) {
                 $is_open = ($accordion_states[$folder_group['folder_id']] === 'open');
-            } else {
-                // Fallback to global accordion_default
-                $is_open = $atts['accordion_default'] === 'open';
             }
+            // Default to closed if no accordion state is set
             
             ?>
             <div class="filebird-docs-folder-section filebird-docs-accordion-section" data-level="<?php echo $level; ?>">
