@@ -18,7 +18,11 @@
         isDirty: false,
 
         init: function() {
-            this.loadFolders();
+            // Only load folders if we're in standalone mode
+            // In document library CPT, folders are loaded by admin.js
+            if (!$('#document_library_folders').length) {
+                this.loadFolders();
+            }
             this.bindEvents();
             
             // Mark as initialized
@@ -26,18 +30,22 @@
         },
 
         bindEvents: function() {
-            // Folder tree events
-            $(document).on('click', '.filebird-fd-folder-item', function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-                FileBirdFDOrder.OrderManager.selectFolder($(this));
-            });
+            // Only bind folder tree events if we're in standalone mode (not in document library CPT)
+            // In the document library CPT, folder selection is handled by admin.js
+            if (!$('#document_library_folders').length) {
+                // Folder tree events
+                $(document).on('click', '.filebird-fd-folder-item', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    FileBirdFDOrder.OrderManager.selectFolder($(this));
+                });
 
-            $(document).on('click', '.filebird-fd-folder-toggle', function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-                FileBirdFDOrder.OrderManager.toggleFolder($(this));
-            });
+                $(document).on('click', '.filebird-fd-folder-toggle', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    FileBirdFDOrder.OrderManager.toggleFolder($(this));
+                });
+            }
 
             // Order control events
             $('#save-order').on('click', function() {
