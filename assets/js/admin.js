@@ -367,7 +367,23 @@
         buildNestedAccordionStateHtml: function(subfolders, level = 0) {
             var html = '';
             
+            // Get excluded folders from the document library settings
+            var excludedFolders = [];
+            var excludeInput = $('#document_library_exclude_folders');
+            if (excludeInput.length > 0) {
+                var excludeValue = excludeInput.val();
+                if (excludeValue) {
+                    excludedFolders = excludeValue.split(',').map(function(id) { return id.trim(); });
+                }
+            }
+            
             subfolders.forEach(function(subfolder) {
+                // Skip excluded folders and their entire subtree
+                if (excludedFolders.indexOf(subfolder.id.toString()) !== -1) {
+                    // Skip this folder and all its children completely
+                    return;
+                }
+                
                 var hasChildren = subfolder.children && subfolder.children.length > 0;
                 var folderClass = 'accordion-state-item';
                 var toggleClass = hasChildren ? 'accordion-state-toggle' : 'accordion-state-toggle-empty';
