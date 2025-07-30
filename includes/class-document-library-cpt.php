@@ -409,36 +409,100 @@ class FileBird_FD_Document_Library_CPT {
                 // Initialize with existing selected folders
                 var existingFolders = $('#document_library_folders').val();
                 if (existingFolders) {
-                    // Set the selected folder display
                     var folderIds = existingFolders.split(',').filter(function(id) { return id.trim() !== ''; });
                     if (folderIds.length > 0) {
-                        // For now, we'll use the first folder as the primary selection
-                        // In the future, we could enhance this to support multiple folder selection
-                        var firstFolderId = folderIds[0];
-                        
-                        // Wait for the folder tree to load, then select the folder
-                        var checkFolderExists = function() {
-                            var $folderItem = $('.filebird-fd-folder-item[data-folder-id="' + firstFolderId + '"]');
-                            if ($folderItem.length > 0) {
-                                $folderItem.addClass('selected');
+                        // Wait for the folder tree to load, then expand and select folders
+                        var initializeFolders = function() {
+                            var allFoldersFound = true;
+                            var selectedFolderNames = [];
+                            var highestLevelFolderId = null;
+                            var highestLevel = -1;
+                            
+                            // Check if all folders exist and find the highest level folder
+                            folderIds.forEach(function(folderId) {
+                                var $folderItem = $('.filebird-fd-folder-item[data-folder-id="' + folderId + '"]');
+                                if ($folderItem.length > 0) {
+                                    // Get folder level (count parent folders)
+                                    var level = $folderItem.parents('.filebird-fd-folder-item').length;
+                                    if (level > highestLevel) {
+                                        highestLevel = level;
+                                        highestLevelFolderId = folderId;
+                                    }
+                                    
+                                    // Collect folder names for display
+                                    var folderName = $folderItem.data('folder-name');
+                                    if (folderName) {
+                                        selectedFolderNames.push(folderName);
+                                    }
+                                } else {
+                                    allFoldersFound = false;
+                                }
+                            });
+                            
+                            if (allFoldersFound) {
+                                // Expand all parent folders to show selected folders
+                                folderIds.forEach(function(folderId) {
+                                    var $folderItem = $('.filebird-fd-folder-item[data-folder-id="' + folderId + '"]');
+                                    if ($folderItem.length > 0) {
+                                        // Expand all parent folders
+                                        $folderItem.parents('.filebird-fd-folder-item').each(function() {
+                                            var $parent = $(this);
+                                            var $toggle = $parent.find('.filebird-fd-folder-toggle');
+                                            var $children = $parent.find('> .filebird-fd-folder-children');
+                                            
+                                            if ($children.length > 0 && !$children.is(':visible')) {
+                                                $toggle.removeClass('collapsed').addClass('expanded');
+                                                $children.show();
+                                            }
+                                        });
+                                        
+                                        // Mark folder as selected
+                                        $folderItem.addClass('selected');
+                                    }
+                                });
                                 
-                                // Update the selected folder display
-                                var folderName = $folderItem.data('folder-name');
-                                if (folderName) {
-                                    $('#selected-folder-display').html('<span class="selected-folder">' + folderName + '</span>');
+                                // Update the selected folder display with all folder names
+                                if (selectedFolderNames.length > 0) {
+                                    var displayHtml = '';
+                                    selectedFolderNames.forEach(function(name, index) {
+                                        if (index > 0) displayHtml += ', ';
+                                        displayHtml += '<span class="selected-folder">' + name + '</span>';
+                                    });
+                                    $('#selected-folder-display').html(displayHtml);
                                 }
                                 
-                                // Update the admin's selected folder state
-                                FileBirdFDAdmin.Admin.selectedFolderId = firstFolderId;
-                                FileBirdFDAdmin.Admin.selectedFolderName = folderName;
+                                // Update the admin's selected folder state (use the highest level folder as primary)
+                                if (highestLevelFolderId) {
+                                    var $primaryFolder = $('.filebird-fd-folder-item[data-folder-id="' + highestLevelFolderId + '"]');
+                                    var primaryFolderName = $primaryFolder.data('folder-name');
+                                    
+                                    FileBirdFDAdmin.Admin.selectedFolderId = highestLevelFolderId;
+                                    FileBirdFDAdmin.Admin.selectedFolderName = primaryFolderName;
+                                    
+                                    // Trigger the folder selection logic to populate subfolders
+                                    // This simulates what happens when a user clicks on a folder
+                                    if (typeof FileBirdFDAdmin.Admin.populateSubfolders === 'function') {
+                                        FileBirdFDAdmin.Admin.populateSubfolders(highestLevelFolderId);
+                                    }
+                                    
+                                    // Show accordion state controls if group-by-folder is enabled
+                                    if ($('#group-by-folder').is(':checked')) {
+                                        $('#accordion-state-controls').show();
+                                    }
+                                    
+                                    // Update the shortcode
+                                    if (typeof FileBirdFDAdmin.Admin.updateShortcode === 'function') {
+                                        FileBirdFDAdmin.Admin.updateShortcode();
+                                    }
+                                }
                             } else {
                                 // Try again in a moment
-                                setTimeout(checkFolderExists, 100);
+                                setTimeout(initializeFolders, 100);
                             }
                         };
                         
-                        // Start checking for the folder
-                        setTimeout(checkFolderExists, 500);
+                        // Start the initialization process
+                        setTimeout(initializeFolders, 500);
                     }
                 }
             }
