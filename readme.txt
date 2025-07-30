@@ -65,9 +65,13 @@ The plugin includes a powerful Document Order Manager integrated into the Docume
 - Save/reset functionality
 - Automatic loading of documents from selected folders
 - Responsive design for all devices
+- State preservation for accordion folders
 
 **Access:**
 Go to **Document Libraries** → **Add New** or **Edit** → Select "Menu Order" in the "Order By" dropdown.
+
+**Accordion State Management:**
+The plugin now supports granular control over accordion folder states. Each folder can be set to open or closed independently, and these states are preserved when parent folders are closed and reopened. This provides a much more intuitive user experience.
 
 **Available Attributes:**
 
@@ -84,7 +88,8 @@ Go to **Document Libraries** → **Add New** or **Edit** → Select "Menu Order"
 * `class`: Additional CSS classes
 * `include_subfolders`: true or false (default: false) - Include documents from subfolders
 * `group_by_folder`: true or false (default: false) - Group documents by folder structure (requires include_subfolders)
-* `accordion_default`: open or closed (default: closed) - Default state for accordion folders
+* `accordion_states`: Base64-encoded JSON string of folder states (e.g., `{"456":"open","789":"closed"}`)
+* `exclude_folders`: Comma-separated folder IDs to exclude
 
 **Examples:**
 
@@ -106,11 +111,11 @@ Include subfolders:
 Group by folder structure:
 `[filebird_docs folder="123" include_subfolders="true" group_by_folder="true"]`
 
-With accordion folders (default closed):
-`[filebird_docs folder="123" include_subfolders="true" group_by_folder="true" accordion_default="closed"]`
+With granular accordion control (Base64 encoded):
+`[filebird_docs folder="123" include_subfolders="true" group_by_folder="true" accordion_states="eyI0NTYiOiJvcGVuIiwiNzg5IjoiY2xvc2VkIn0="]`
 
-With accordion folders (default open):
-`[filebird_docs folder="123" include_subfolders="true" group_by_folder="true" accordion_default="open"]`
+Exclude specific subfolders:
+`[filebird_docs folder="123" include_subfolders="true" exclude_folders="456,789"]`
 
 **Document Library Examples:**
 
@@ -180,6 +185,10 @@ Yes, the plugin includes AJAX functionality for dynamic loading of folders and d
 * Frontend editor buttons for administrators
 * Easy-to-use admin interface for content editors
 * Document Order Manager with drag-and-drop functionality
+* Granular accordion state control
+* Base64-encoded accordion states for complex data
+* State preservation when closing parent folders
+* Enhanced frontend JavaScript for intuitive accordion behavior
 
 == Upgrade Notice ==
 
