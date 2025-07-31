@@ -56,7 +56,7 @@ if (!function_exists('renderFolderGroupsGrid')) {
                     <?php if (!empty($folder_group['attachments'])): ?>
                         <div class="filebird-docs-grid filebird-docs-grid-<?php echo esc_attr($atts['columns']); ?>">
                         <?php foreach ($folder_group['attachments'] as $attachment): ?>
-                            <div class="filebird-docs-grid-item">
+                            <div class="filebird-docs-grid-item" data-attachment-id="<?php echo esc_attr($attachment->ID); ?>">
                                 <div class="filebird-docs-card">
                                     <div class="filebird-docs-card-header">
                                         <?php if ($atts['show_thumbnail'] && $attachment->thumbnail_url): ?>
@@ -109,6 +109,7 @@ if (!function_exists('renderFolderGroupsGrid')) {
                                             <i class="filebird-docs-icon filebird-docs-icon-download"></i>
                                             <?php _e('Download', 'filebird-frontend-docs'); ?>
                                         </a>
+                                        <?php echo FileBird_FD_Document_Display::getEditButton($attachment->ID, $attachment->post_title); ?>
                                     </div>
                                 </div>
                             </div>

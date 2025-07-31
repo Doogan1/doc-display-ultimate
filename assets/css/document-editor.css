@@ -1,0 +1,489 @@
+/**
+ * FileBird Frontend Documents - Document Editor CSS
+ * Styles for the document editing modal and edit buttons
+ */
+
+/* Edit Button Styles */
+.filebird-docs-edit-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 12px;
+    background: #0073aa;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-decoration: none;
+    margin-left: 8px;
+}
+
+.filebird-docs-edit-btn:hover {
+    background: #005a87;
+    color: #fff;
+    text-decoration: none;
+}
+
+.filebird-docs-edit-btn:focus {
+    outline: 2px solid #0073aa;
+    outline-offset: 2px;
+}
+
+.filebird-docs-edit-btn .filebird-docs-icon {
+    font-size: 14px;
+}
+
+.filebird-docs-edit-text {
+    display: inline-block;
+}
+
+/* Modal Overlay */
+.filebird-docs-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 999999;
+    padding: 20px;
+}
+
+.filebird-docs-modal-overlay.hidden {
+    display: none;
+}
+
+/* Modal Container */
+.filebird-docs-modal {
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    max-width: 500px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+    position: relative;
+}
+
+/* Modal Header */
+.filebird-docs-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 24px 0;
+    border-bottom: 1px solid #e1e5e9;
+    margin-bottom: 0;
+}
+
+.filebird-docs-modal-title {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: #1d2327;
+}
+
+.filebird-docs-modal-close {
+    background: none;
+    border: none;
+    font-size: 20px;
+    color: #646970;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+.filebird-docs-modal-close:hover {
+    background: #f0f0f1;
+    color: #1d2327;
+}
+
+/* Modal Tabs */
+.filebird-docs-modal-tabs {
+    display: flex;
+    border-bottom: 1px solid #e1e5e9;
+    padding: 0 24px;
+}
+
+.filebird-docs-tab-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 12px 16px;
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: #646970;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.filebird-docs-tab-btn:hover {
+    color: #0073aa;
+    background: #f6f7f7;
+}
+
+.filebird-docs-tab-btn.active {
+    color: #0073aa;
+    border-bottom-color: #0073aa;
+}
+
+.filebird-docs-tab-btn .filebird-docs-icon {
+    font-size: 16px;
+}
+
+/* Tab Content */
+.filebird-docs-tab-content {
+    display: none;
+    padding: 24px;
+}
+
+.filebird-docs-tab-content.active {
+    display: block;
+}
+
+/* Form Groups */
+.filebird-docs-form-group {
+    margin-bottom: 20px;
+}
+
+.filebird-docs-form-group label {
+    display: block;
+    margin-bottom: 6px;
+    font-weight: 500;
+    color: #1d2327;
+    font-size: 14px;
+}
+
+.filebird-docs-form-group input[type="text"] {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #8c8f94;
+    border-radius: 4px;
+    font-size: 14px;
+    transition: border-color 0.2s ease;
+}
+
+.filebird-docs-form-group input[type="text"]:focus {
+    outline: none;
+    border-color: #0073aa;
+    box-shadow: 0 0 0 1px #0073aa;
+}
+
+/* Drop Zone */
+.filebird-docs-drop-zone {
+    border: 2px dashed #c3c4c7;
+    border-radius: 6px;
+    padding: 30px 20px;
+    text-align: center;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    position: relative;
+}
+
+.filebird-docs-drop-zone:hover {
+    border-color: #0073aa;
+    background: #f6f7f7;
+}
+
+.filebird-docs-drop-zone-active {
+    border-color: #0073aa;
+    background: #f0f6fc;
+}
+
+.filebird-docs-drop-zone-success {
+    border-color: #28a745;
+    background: #f8fff9;
+}
+
+.filebird-docs-drop-zone-content {
+    pointer-events: none;
+}
+
+.filebird-docs-file-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    pointer-events: auto;
+}
+
+.filebird-docs-file-details {
+    flex: 1;
+    text-align: left;
+}
+
+.filebird-docs-file-name {
+    font-weight: 500;
+    color: #1d2327;
+    margin-bottom: 4px;
+    word-break: break-word;
+}
+
+.filebird-docs-file-size {
+    font-size: 12px;
+    color: #646970;
+}
+
+.filebird-docs-remove-file {
+    background: none;
+    border: none;
+    color: #dc3545;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+    z-index: 10;
+    position: relative;
+}
+
+.filebird-docs-remove-file:hover {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.filebird-docs-drop-zone-content .filebird-docs-icon {
+    font-size: 32px;
+    color: #646970;
+    margin-bottom: 12px;
+    display: block;
+}
+
+.filebird-docs-drop-zone-content p {
+    margin: 0;
+    color: #646970;
+    font-size: 14px;
+}
+
+.filebird-docs-drop-zone input[type="file"] {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+    z-index: 1;
+}
+
+.filebird-docs-drop-zone-success input[type="file"] {
+    z-index: 0;
+}
+
+/* Modal Actions */
+.filebird-docs-modal-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+    padding: 20px 24px 24px;
+    border-top: 1px solid #e1e5e9;
+    margin-top: 0;
+}
+
+.filebird-docs-modal-cancel {
+    padding: 8px 16px;
+    background: #f6f7f7;
+    border: 1px solid #c3c4c7;
+    border-radius: 4px;
+    color: #1d2327;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.filebird-docs-modal-cancel:hover {
+    background: #f0f0f1;
+    border-color: #8c8f94;
+}
+
+.filebird-docs-modal-submit {
+    padding: 8px 16px;
+    background: #0073aa;
+    border: 1px solid #0073aa;
+    border-radius: 4px;
+    color: #fff;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.filebird-docs-modal-submit:hover:not(:disabled) {
+    background: #005a87;
+    border-color: #005a87;
+}
+
+.filebird-docs-modal-submit:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Loading State */
+.filebird-docs-modal-submit .loading-text {
+    display: none;
+}
+
+.filebird-docs-modal-submit:disabled .submit-text {
+    display: none;
+}
+
+.filebird-docs-modal-submit:disabled .loading-text {
+    display: inline;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .filebird-docs-modal {
+        margin: 10px;
+        max-width: none;
+    }
+    
+    .filebird-docs-modal-tabs {
+        flex-direction: column;
+    }
+    
+    .filebird-docs-tab-btn {
+        border-bottom: none;
+        border-right: 2px solid transparent;
+        justify-content: flex-start;
+    }
+    
+    .filebird-docs-tab-btn.active {
+        border-right-color: #0073aa;
+        border-bottom-color: transparent;
+    }
+    
+    .filebird-docs-modal-actions {
+        flex-direction: column;
+    }
+    
+    .filebird-docs-modal-actions button {
+        width: 100%;
+    }
+}
+
+/* Edit Button in Different Layouts */
+.filebird-docs-card-actions .filebird-docs-edit-btn,
+.filebird-docs-list-actions .filebird-docs-edit-btn,
+.filebird-docs-table-actions .filebird-docs-edit-btn {
+    font-size: 11px;
+    padding: 4px 8px;
+}
+
+.filebird-docs-table-actions .filebird-docs-edit-btn {
+    margin-left: 4px;
+}
+
+/* Icon Styles */
+.filebird-docs-icon-edit::before {
+    content: "✏️";
+}
+
+.filebird-docs-icon-upload::before {
+    content: "📤";
+}
+
+.filebird-docs-icon-close::before {
+    content: "✕";
+}
+
+.filebird-docs-icon-pdf::before {
+    content: "📄";
+}
+
+.filebird-docs-icon-doc::before {
+    content: "📝";
+}
+
+.filebird-docs-icon-docx::before {
+    content: "📝";
+}
+
+.filebird-docs-icon-xls::before {
+    content: "📊";
+}
+
+.filebird-docs-icon-xlsx::before {
+    content: "📊";
+}
+
+.filebird-docs-icon-ppt::before {
+    content: "📈";
+}
+
+.filebird-docs-icon-pptx::before {
+    content: "📈";
+}
+
+.filebird-docs-icon-txt::before {
+    content: "📄";
+}
+
+.filebird-docs-icon-image::before {
+    content: "🖼️";
+}
+
+.filebird-docs-icon-file::before {
+    content: "📁";
+}
+
+/* Accessibility */
+.filebird-docs-modal-close:focus,
+.filebird-docs-tab-btn:focus,
+.filebird-docs-modal-cancel:focus,
+.filebird-docs-modal-submit:focus {
+    outline: 2px solid #0073aa;
+    outline-offset: 2px;
+}
+
+/* Screen Reader Only */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* Success Notification */
+.filebird-docs-notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 12px 20px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    z-index: 1000000;
+    transform: translateX(100%);
+    transition: transform 0.3s ease;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.filebird-docs-notification.show {
+    transform: translateX(0);
+}
+
+.filebird-docs-notification-success {
+    background: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.filebird-docs-notification-error {
+    background: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+} 
