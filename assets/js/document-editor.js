@@ -240,6 +240,10 @@
             var $submitText = $submitBtn.find('.submit-text');
             var $loadingText = $submitBtn.find('.loading-text');
             
+            // Get attachment ID and new title for UI update
+            var attachmentId = $('#filebird-docs-attachment-id').val();
+            var newTitle = '';
+            
             // Determine which tab is active
             var activeTab = $('.filebird-docs-tab-btn.active').data('tab');
             var action = activeTab === 'replace' ? 'filebird_fd_replace_document' : 'filebird_fd_rename_document';
@@ -256,12 +260,12 @@
             // Ensure we're using the correct title input based on active tab
             if (activeTab === 'rename') {
                 // For rename, use the rename tab input
-                var renameTitle = $('#filebird-docs-title-input').val();
-                formData.set('document_title', renameTitle);
+                newTitle = $('#filebird-docs-title-input').val();
+                formData.set('document_title', newTitle);
             } else if (activeTab === 'replace') {
                 // For replace, use the replace tab input
-                var replaceTitle = $('#filebird-docs-title-input-replace').val();
-                formData.set('document_title', replaceTitle);
+                newTitle = $('#filebird-docs-title-input-replace').val();
+                formData.set('document_title', newTitle);
             }
             
             // AJAX request
@@ -273,10 +277,10 @@
                 contentType: false,
                 success: function(response) {
                     if (response.success) {
-                        alert('Document updated successfully!');
+                        // Update the UI without page reload
+                        FileBirdFD.DocumentEditor.updateDocumentUI(attachmentId, newTitle);
+                        FileBirdFD.DocumentEditor.showSuccessMessage('Document updated successfully!');
                         FileBirdFD.DocumentEditor.closeModal();
-                        // Reload the page to show the updated document
-                        window.location.reload();
                     } else {
                         alert('Error: ' + (response.data || 'Unknown error occurred'));
                     }
@@ -291,6 +295,49 @@
                     $loadingText.hide();
                 }
             });
+        },
+        
+        updateDocumentUI: function(attachmentId, newTitle) {
+            // Update document title in all places where it appears
+            var $documentElements = $('[data-attachment-id="' + attachmentId + '"]').closest('.filebird-docs-card, .filebird-docs-list-item, .filebird-docs-table-row');
+            
+            $documentElements.each(function() {
+                var $element = $(this);
+                
+                // Update card title
+                $element.find('.filebird-docs-card-title a, .filebird-docs-list-title a, .filebird-docs-table-title a').text(newTitle);
+                
+                // Update link titles
+                $element.find('.filebird-docs-link').attr('title', newTitle);
+                
+                // Update edit button data
+                $element.find('.filebird-docs-edit-btn').attr('data-document-title', newTitle);
+            });
+            
+            // Update modal title if it's open for this document
+            if ($('#filebird-docs-attachment-id').val() === attachmentId) {
+                $('#filebird-docs-title-input').val(newTitle);
+                $('#filebird-docs-title-input-replace').val(newTitle);
+            }
+        },
+        
+        showSuccessMessage: function(message) {
+            // Create a subtle success notification
+            var $notification = $('<div class="filebird-docs-notification filebird-docs-notification-success">' + message + '</div>');
+            $('body').append($notification);
+            
+            // Show the notification
+            setTimeout(function() {
+                $notification.addClass('show');
+            }, 100);
+            
+            // Hide after 3 seconds
+            setTimeout(function() {
+                $notification.removeClass('show');
+                setTimeout(function() {
+                    $notification.remove();
+                }, 300);
+            }, 3000);
         }
     };
 

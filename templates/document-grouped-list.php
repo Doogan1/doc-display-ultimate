@@ -47,7 +47,7 @@ if (!function_exists('renderFolderGroupsList')) {
                     <?php if (!empty($folder_group['attachments'])): ?>
                         <div class="filebird-docs-list">
                         <?php foreach ($folder_group['attachments'] as $attachment): ?>
-                            <div class="filebird-docs-list-item">
+                            <div class="filebird-docs-list-item" data-attachment-id="<?php echo esc_attr($attachment->ID); ?>">
                                 <div class="filebird-docs-list-content">
                                     <div class="filebird-docs-list-thumbnail">
                                         <?php if ($atts['show_thumbnail'] && $attachment->thumbnail_url): ?>

@@ -18,7 +18,7 @@ extract($data);
     <?php if (!empty($attachments)): ?>
         <div class="filebird-docs-grid filebird-docs-grid-<?php echo esc_attr($atts['columns']); ?>">
             <?php foreach ($attachments as $attachment): ?>
-                <div class="filebird-docs-grid-item">
+                <div class="filebird-docs-grid-item" data-attachment-id="<?php echo esc_attr($attachment->ID); ?>">
                     <div class="filebird-docs-card">
                         <div class="filebird-docs-card-header">
                             <?php if ($atts['show_thumbnail'] && $attachment->thumbnail_url): ?>

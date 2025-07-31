@@ -84,7 +84,7 @@ if (!function_exists('renderFolderGroupsTable')) {
                             </thead>
                             <tbody>
                                 <?php foreach ($folder_group['attachments'] as $attachment): ?>
-                                    <tr class="filebird-docs-table-row">
+                                    <tr class="filebird-docs-table-row" data-attachment-id="<?php echo esc_attr($attachment->ID); ?>">
                                         <?php if ($atts['show_thumbnail']): ?>
                                             <td class="filebird-docs-table-thumbnail">
                                                 <?php if ($attachment->thumbnail_url): ?>
