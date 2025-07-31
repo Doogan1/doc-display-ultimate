@@ -419,7 +419,19 @@ class FileBird_FD_Document_Display {
             unlink($old_file_path);
         }
         
-        wp_send_json_success('Document replaced successfully');
+        // Get updated attachment info for potential future dynamic updates
+        $updated_attachment = get_post($attachment_id);
+        $thumbnail_url = wp_get_attachment_image_src($attachment_id, 'thumbnail');
+        $medium_url = wp_get_attachment_image_src($attachment_id, 'medium');
+        
+        wp_send_json_success(array(
+            'message' => 'Document replaced successfully',
+            'attachment_id' => $attachment_id,
+            'new_title' => $new_title,
+            'thumbnail_url' => $thumbnail_url ? $thumbnail_url[0] : '',
+            'medium_url' => $medium_url ? $medium_url[0] : '',
+            'file_url' => wp_get_attachment_url($attachment_id)
+        ));
     }
     
     /**

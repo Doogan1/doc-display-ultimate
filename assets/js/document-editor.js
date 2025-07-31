@@ -277,10 +277,22 @@
                 contentType: false,
                 success: function(response) {
                     if (response.success) {
-                        // Update the UI without page reload
-                        FileBirdFD.DocumentEditor.updateDocumentUI(attachmentId, newTitle);
-                        FileBirdFD.DocumentEditor.showSuccessMessage('Document updated successfully!');
-                        FileBirdFD.DocumentEditor.closeModal();
+                        if (activeTab === 'replace') {
+                            // For file replacement, we need to reload the page to show new file and thumbnail
+                            // This is necessary because:
+                            // 1. The file URL changes
+                            // 2. Thumbnail generation takes time
+                            // 3. File metadata (size, type) may change
+                            FileBirdFD.DocumentEditor.showSuccessMessage('Document replaced successfully!');
+                            FileBirdFD.DocumentEditor.closeModal();
+                            // Reload the page to show the new file and thumbnail
+                            window.location.reload();
+                        } else {
+                            // For rename, update the UI without page reload
+                            FileBirdFD.DocumentEditor.updateDocumentUI(attachmentId, newTitle);
+                            FileBirdFD.DocumentEditor.showSuccessMessage('Document renamed successfully!');
+                            FileBirdFD.DocumentEditor.closeModal();
+                        }
                     } else {
                         alert('Error: ' + (response.data || 'Unknown error occurred'));
                     }
@@ -319,6 +331,27 @@
                 $('#filebird-docs-title-input').val(newTitle);
                 $('#filebird-docs-title-input-replace').val(newTitle);
             }
+        },
+        
+        updateDocumentThumbnail: function(attachmentId, thumbnailUrl, mediumUrl, fileUrl) {
+            // Update document thumbnails and file URLs in all places where they appear
+            var $documentElements = $('[data-attachment-id="' + attachmentId + '"]').closest('.filebird-docs-card, .filebird-docs-list-item, .filebird-docs-table-row');
+            
+            $documentElements.each(function() {
+                var $element = $(this);
+                
+                // Update thumbnail images
+                $element.find('.filebird-docs-thumbnail').attr('src', thumbnailUrl);
+                
+                // Update file links
+                $element.find('.filebird-docs-link').attr('href', fileUrl);
+                $element.find('.filebird-docs-download-btn').attr('href', fileUrl);
+                
+                // Update medium images if they exist
+                if (mediumUrl) {
+                    $element.find('.filebird-docs-medium').attr('src', mediumUrl);
+                }
+            });
         },
         
         showSuccessMessage: function(message) {
