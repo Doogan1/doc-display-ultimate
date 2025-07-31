@@ -14,6 +14,9 @@
         init: function() {
             this.bindEvents();
             this.createModal();
+            
+            // Initialize flags
+            this.processingFile = false;
         },
 
         bindEvents: function() {
@@ -51,14 +54,26 @@
                 }
             });
 
-            // File input validation
-            $(document).on('change', '#filebird-docs-file-input', function() {
+            // File input change event handler
+            $(document).on('change', '#filebird-docs-file-input', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                // Prevent multiple processing of the same file
+                if (FileBirdFD.DocumentEditor.processingFile) {
+                    return;
+                }
+                FileBirdFD.DocumentEditor.processingFile = true;
+                
                 var file = this.files[0];
+                
                 if (file) {
                     // Check file size (10MB limit)
                     if (file.size > 10 * 1024 * 1024) {
                         alert('File size must be less than 10MB');
                         this.value = '';
+                        FileBirdFD.DocumentEditor.resetDropZone();
+                        FileBirdFD.DocumentEditor.processingFile = false;
                         return;
                     }
 
@@ -81,15 +96,23 @@
                     if (allowedTypes.indexOf(file.type) === -1) {
                         alert('Please select a valid document file');
                         this.value = '';
+                        FileBirdFD.DocumentEditor.resetDropZone();
+                        FileBirdFD.DocumentEditor.processingFile = false;
                         return;
                     }
-
+                    
+                    // Show file info in drop zone
+                    FileBirdFD.DocumentEditor.showFileInfo(file);
+                    
                     // Update title if empty
                     var titleInput = $('#filebird-docs-title-input-replace');
                     if (!titleInput.val().trim()) {
                         titleInput.val(file.name.replace(/\.[^/.]+$/, ''));
                     }
                 }
+                
+                // Reset processing flag
+                FileBirdFD.DocumentEditor.processingFile = false;
             });
 
             // Form submission
@@ -120,11 +143,89 @@
                 e.preventDefault();
                 $(this).removeClass('filebird-docs-drop-zone-active');
                 
+                // Prevent multiple processing
+                if (FileBirdFD.DocumentEditor.processingFile) {
+                    return;
+                }
+                FileBirdFD.DocumentEditor.processingFile = true;
+                
                 var files = e.originalEvent.dataTransfer.files;
                 if (files.length > 0) {
-                    var fileInput = $('#filebird-docs-file-input');
-                    fileInput[0].files = files;
-                    fileInput.trigger('change');
+                    var fileInput = $('#filebird-docs-file-input')[0];
+                    fileInput.files = files;
+                    // Manually call the change handler instead of triggering
+                    if (fileInput.files[0]) {
+                        var file = fileInput.files[0];
+                        
+                        // Check file size (10MB limit)
+                        if (file.size > 10 * 1024 * 1024) {
+                            alert('File size must be less than 10MB');
+                            fileInput.value = '';
+                            FileBirdFD.DocumentEditor.resetDropZone();
+                            FileBirdFD.DocumentEditor.processingFile = false;
+                            return;
+                        }
+
+                        // Check file type
+                        var allowedTypes = [
+                            'application/pdf',
+                            'application/msword',
+                            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                            'application/vnd.ms-excel',
+                            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                            'application/vnd.ms-powerpoint',
+                            'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+                            'text/plain',
+                            'image/jpeg',
+                            'image/png',
+                            'image/gif',
+                            'image/webp'
+                        ];
+
+                        if (allowedTypes.indexOf(file.type) === -1) {
+                            alert('Please select a valid document file');
+                            fileInput.value = '';
+                            FileBirdFD.DocumentEditor.resetDropZone();
+                            FileBirdFD.DocumentEditor.processingFile = false;
+                            return;
+                        }
+
+                        // Show file info in drop zone
+                        FileBirdFD.DocumentEditor.showFileInfo(file);
+                        
+                        // Update title if empty
+                        var titleInput = $('#filebird-docs-title-input-replace');
+                        if (!titleInput.val().trim()) {
+                            titleInput.val(file.name.replace(/\.[^/.]+$/, ''));
+                        }
+                    }
+                }
+                
+                // Reset processing flag
+                FileBirdFD.DocumentEditor.processingFile = false;
+            });
+            
+            // Click to browse functionality
+            $(document).on('click', '.filebird-docs-drop-zone', function(e) {
+                // Don't trigger if clicking on the remove button or if we're in success state
+                if ($(e.target).closest('.filebird-docs-remove-file').length > 0 || $(this).hasClass('filebird-docs-drop-zone-success')) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    return false;
+                }
+                
+                // Don't trigger if we're currently processing a file
+                if (FileBirdFD.DocumentEditor.processingFile) {
+                    return false;
+                }
+                
+                // Only trigger file input if we're not in success state and no file is currently selected
+                if (!$(this).hasClass('filebird-docs-drop-zone-success') && !$(this).find('.filebird-docs-file-info').length) {
+                    // Use the existing file input
+                    var fileInput = $('#filebird-docs-file-input')[0];
+                    if (fileInput) {
+                        fileInput.click();
+                    }
                 }
             });
         },
@@ -174,9 +275,9 @@
                                         <div class="filebird-docs-drop-zone-content">
                                             <i class="filebird-docs-icon filebird-docs-icon-upload"></i>
                                             <p>Drag and drop a file here or click to browse</p>
-                                            <input type="file" id="filebird-docs-file-input" name="document_file" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.jpg,.jpeg,.png,.gif,.webp">
                                         </div>
                                     </div>
+                                    <input type="file" id="filebird-docs-file-input" name="document_file" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.jpg,.jpeg,.png,.gif,.webp" style="display: none;">
                                 </div>
                             </div>
                             
@@ -212,12 +313,22 @@
             $('#filebird-docs-modal').addClass('hidden');
             $('body').css('overflow', '');
             
-            // Reset form
-            $('#filebird-docs-edit-form')[0].reset();
+            // Manually clear form fields instead of reset
+            $('#filebird-docs-title-input').val('');
+            $('#filebird-docs-title-input-replace').val('');
+            $('#filebird-docs-attachment-id').val('');
+            $('#filebird-docs-nonce').val('');
+            
             $('#filebird-docs-tab-rename').addClass('active');
             $('#filebird-docs-tab-replace').removeClass('active');
             $('.filebird-docs-tab-btn').removeClass('active');
             $('.filebird-docs-tab-btn[data-tab="rename"]').addClass('active');
+            
+            // Reset drop zone
+            this.resetDropZone();
+            
+            // Reset flags
+            this.processingFile = false;
         },
 
         switchTab: function(tab) {
@@ -266,6 +377,16 @@
                 // For replace, use the replace tab input
                 newTitle = $('#filebird-docs-title-input-replace').val();
                 formData.set('document_title', newTitle);
+                
+                // Check if file is attached
+                var fileInput = $('#filebird-docs-file-input')[0];
+                if (!fileInput.files || fileInput.files.length === 0) {
+                    alert('Please select a file to upload');
+                    return;
+                }
+                
+                // Manually append the file to FormData to ensure it's included
+                formData.append('document_file', fileInput.files[0]);
             }
             
             // AJAX request
@@ -371,6 +492,87 @@
                     $notification.remove();
                 }, 300);
             }, 3000);
+        },
+        
+        showFileInfo: function(file) {
+            var $dropZone = $('.filebird-docs-drop-zone');
+            var $content = $dropZone.find('.filebird-docs-drop-zone-content');
+            
+            // Format file size
+            var fileSize = (file.size / 1024 / 1024).toFixed(2) + ' MB';
+            
+            // Get file type icon
+            var fileType = this.getFileTypeIcon(file.type);
+            
+            // Update drop zone content
+            $content.html(`
+                <div class="filebird-docs-file-info">
+                    <i class="filebird-docs-icon ${fileType}"></i>
+                    <div class="filebird-docs-file-details">
+                        <div class="filebird-docs-file-name">${file.name}</div>
+                        <div class="filebird-docs-file-size">${fileSize}</div>
+                    </div>
+                    <button type="button" class="filebird-docs-remove-file" title="Remove file">
+                        <i class="filebird-docs-icon filebird-docs-icon-close"></i>
+                    </button>
+                </div>
+            `);
+            
+            // Add remove file functionality
+            $content.find('.filebird-docs-remove-file').on('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                e.stopImmediatePropagation();
+                $('#filebird-docs-file-input').val('');
+                FileBirdFD.DocumentEditor.resetDropZone();
+                return false;
+            });
+            
+            // Also handle remove button clicks via event delegation
+            $(document).on('click', '.filebird-docs-remove-file', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                e.stopImmediatePropagation();
+                $('#filebird-docs-file-input').val('');
+                FileBirdFD.DocumentEditor.resetDropZone();
+                return false;
+            });
+            
+            // Add success styling
+            $dropZone.addClass('filebird-docs-drop-zone-success');
+        },
+        
+        resetDropZone: function() {
+            var $dropZone = $('.filebird-docs-drop-zone');
+            var $content = $dropZone.find('.filebird-docs-drop-zone-content');
+            
+            // Reset to original content
+            $content.html(`
+                <i class="filebird-docs-icon filebird-docs-icon-upload"></i>
+                <p>Drag and drop a file here or click to browse</p>
+            `);
+            
+            // Remove success styling
+            $dropZone.removeClass('filebird-docs-drop-zone-success');
+        },
+        
+        getFileTypeIcon: function(mimeType) {
+            var iconMap = {
+                'application/pdf': 'filebird-docs-icon-pdf',
+                'application/msword': 'filebird-docs-icon-doc',
+                'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'filebird-docs-icon-docx',
+                'application/vnd.ms-excel': 'filebird-docs-icon-xls',
+                'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': 'filebird-docs-icon-xlsx',
+                'application/vnd.ms-powerpoint': 'filebird-docs-icon-ppt',
+                'application/vnd.openxmlformats-officedocument.presentationml.presentation': 'filebird-docs-icon-pptx',
+                'text/plain': 'filebird-docs-icon-txt',
+                'image/jpeg': 'filebird-docs-icon-image',
+                'image/png': 'filebird-docs-icon-image',
+                'image/gif': 'filebird-docs-icon-image',
+                'image/webp': 'filebird-docs-icon-image'
+            };
+            
+            return iconMap[mimeType] || 'filebird-docs-icon-file';
         }
     };
 

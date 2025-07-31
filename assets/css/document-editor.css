@@ -199,8 +199,54 @@
     background: #f0f6fc;
 }
 
+.filebird-docs-drop-zone-success {
+    border-color: #28a745;
+    background: #f8fff9;
+}
+
 .filebird-docs-drop-zone-content {
     pointer-events: none;
+}
+
+.filebird-docs-file-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    pointer-events: auto;
+}
+
+.filebird-docs-file-details {
+    flex: 1;
+    text-align: left;
+}
+
+.filebird-docs-file-name {
+    font-weight: 500;
+    color: #1d2327;
+    margin-bottom: 4px;
+    word-break: break-word;
+}
+
+.filebird-docs-file-size {
+    font-size: 12px;
+    color: #646970;
+}
+
+.filebird-docs-remove-file {
+    background: none;
+    border: none;
+    color: #dc3545;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+    z-index: 10;
+    position: relative;
+}
+
+.filebird-docs-remove-file:hover {
+    background: #f8d7da;
+    color: #721c24;
 }
 
 .filebird-docs-drop-zone-content .filebird-docs-icon {
@@ -224,6 +270,11 @@
     height: 100%;
     opacity: 0;
     cursor: pointer;
+    z-index: 1;
+}
+
+.filebird-docs-drop-zone-success input[type="file"] {
+    z-index: 0;
 }
 
 /* Modal Actions */
@@ -342,6 +393,46 @@
 
 .filebird-docs-icon-close::before {
     content: "✕";
+}
+
+.filebird-docs-icon-pdf::before {
+    content: "📄";
+}
+
+.filebird-docs-icon-doc::before {
+    content: "📝";
+}
+
+.filebird-docs-icon-docx::before {
+    content: "📝";
+}
+
+.filebird-docs-icon-xls::before {
+    content: "📊";
+}
+
+.filebird-docs-icon-xlsx::before {
+    content: "📊";
+}
+
+.filebird-docs-icon-ppt::before {
+    content: "📈";
+}
+
+.filebird-docs-icon-pptx::before {
+    content: "📈";
+}
+
+.filebird-docs-icon-txt::before {
+    content: "📄";
+}
+
+.filebird-docs-icon-image::before {
+    content: "🖼️";
+}
+
+.filebird-docs-icon-file::before {
+    content: "📁";
 }
 
 /* Accessibility */

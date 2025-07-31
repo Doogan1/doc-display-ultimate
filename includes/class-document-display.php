@@ -335,7 +335,8 @@ class FileBird_FD_Document_Display {
             $logger->error('No file uploaded or upload error', array(
                 'user_id' => get_current_user_id(),
                 'files' => isset($_FILES) ? array_keys($_FILES) : array(),
-                'error' => isset($_FILES['document_file']) ? $_FILES['document_file']['error'] : 'no_file'
+                'error' => isset($_FILES['document_file']) ? $_FILES['document_file']['error'] : 'no_file',
+                'post_data' => array_keys($_POST)
             ));
             wp_send_json_error('No file uploaded or upload error');
         }
