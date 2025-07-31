@@ -109,6 +109,7 @@ extract($data);
                                     <i class="filebird-docs-icon filebird-docs-icon-download"></i>
                                     <?php _e('Download', 'filebird-frontend-docs'); ?>
                                 </a>
+                                <?php echo FileBird_FD_Document_Display::getEditButton($attachment->ID, $attachment->post_title); ?>
                             </td>
                         </tr>
                     <?php endforeach; ?>

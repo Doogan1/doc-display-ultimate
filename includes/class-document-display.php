@@ -17,6 +17,10 @@ class FileBird_FD_Document_Display {
         add_action('wp_ajax_nopriv_filebird_fd_get_folders', array($this, 'ajaxGetFolders'));
         add_action('wp_ajax_filebird_fd_get_documents', array($this, 'ajaxGetDocuments'));
         add_action('wp_ajax_nopriv_filebird_fd_get_documents', array($this, 'ajaxGetDocuments'));
+        
+        // Document editing AJAX handlers
+        add_action('wp_ajax_filebird_fd_replace_document', array($this, 'ajaxReplaceDocument'));
+        add_action('wp_ajax_filebird_fd_rename_document', array($this, 'ajaxRenameDocument'));
     }
     
     /**
@@ -135,6 +139,7 @@ class FileBird_FD_Document_Display {
                                    class="filebird-docs-download-btn">
                                     <?php _e('Download', 'filebird-frontend-docs'); ?>
                                 </a>
+                                <?php echo self::getEditButton($attachment->ID, $attachment->post_title); ?>
                             </div>
                         </div>
                     </div>
@@ -195,6 +200,7 @@ class FileBird_FD_Document_Display {
                                class="filebird-docs-download-btn">
                                 <?php _e('Download', 'filebird-frontend-docs'); ?>
                             </a>
+                            <?php echo self::getEditButton($attachment->ID, $attachment->post_title); ?>
                         </div>
                     </div>
                 </div>
@@ -274,6 +280,7 @@ class FileBird_FD_Document_Display {
                                    class="filebird-docs-download-btn">
                                     <?php _e('Download', 'filebird-frontend-docs'); ?>
                                 </a>
+                                <?php echo self::getEditButton($attachment->ID, $attachment->post_title); ?>
                             </td>
                         </tr>
                     <?php endforeach; ?>
@@ -303,5 +310,192 @@ class FileBird_FD_Document_Display {
         );
         
         return isset($icon_map[$file_type]) ? $icon_map[$file_type] : 'filebird-docs-icon-file';
+    }
+    
+    /**
+     * AJAX handler for replacing documents
+     */
+    public function ajaxReplaceDocument() {
+        $logger = FileBird_FD_Logger::getInstance();
+        
+        // Check nonce for security
+        if (!wp_verify_nonce($_POST['filebird_fd_nonce'], 'filebird_fd_edit_nonce')) {
+            $logger->error('Security check failed for document replacement', array('user_id' => get_current_user_id()));
+            wp_send_json_error('Security check failed');
+        }
+        
+        // Check user permissions
+        if (!current_user_can('edit_posts')) {
+            $logger->error('Insufficient permissions for document replacement', array('user_id' => get_current_user_id()));
+            wp_send_json_error('Insufficient permissions');
+        }
+        
+        // Check if file was uploaded
+        if (!isset($_FILES['document_file']) || $_FILES['document_file']['error'] !== UPLOAD_ERR_OK) {
+            $logger->error('No file uploaded or upload error', array(
+                'user_id' => get_current_user_id(),
+                'files' => isset($_FILES) ? array_keys($_FILES) : array(),
+                'error' => isset($_FILES['document_file']) ? $_FILES['document_file']['error'] : 'no_file'
+            ));
+            wp_send_json_error('No file uploaded or upload error');
+        }
+        
+        $file = $_FILES['document_file'];
+        $attachment_id = intval($_POST['attachment_id']);
+        $new_title = sanitize_text_field($_POST['document_title']);
+        
+        // Validate attachment exists
+        $attachment = get_post($attachment_id);
+        if (!$attachment || $attachment->post_type !== 'attachment') {
+            $logger->error('Invalid attachment', array('attachment_id' => $attachment_id));
+            wp_send_json_error('Invalid attachment');
+        }
+        
+        // Validate file type (allow common document types)
+        $allowed_types = array(
+            'application/pdf',
+            'application/msword',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'application/vnd.ms-excel',
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'application/vnd.ms-powerpoint',
+            'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+            'text/plain',
+            'image/jpeg',
+            'image/png',
+            'image/gif',
+            'image/webp'
+        );
+        
+        $file_type = wp_check_filetype($file['name']);
+        
+        if (!in_array($file_type['type'], $allowed_types)) {
+            $logger->error('File type not allowed', array('file_type' => $file_type['type']));
+            wp_send_json_error('File type not allowed');
+        }
+        
+        // Validate file size (10MB limit)
+        if ($file['size'] > 10 * 1024 * 1024) {
+            $logger->error('File size too large', array('file_size' => $file['size']));
+            wp_send_json_error('File size must be less than 10MB');
+        }
+        
+        // Upload the new file
+        require_once(ABSPATH . 'wp-admin/includes/file.php');
+        require_once(ABSPATH . 'wp-admin/includes/image.php');
+        require_once(ABSPATH . 'wp-admin/includes/media.php');
+        
+        $upload = wp_handle_upload($file, array('test_form' => false));
+        
+        if (isset($upload['error'])) {
+            $logger->error('Upload failed', array('error' => $upload['error']));
+            wp_send_json_error('Upload failed: ' . $upload['error']);
+        }
+        
+        // Get the old file path for deletion
+        $old_file_path = get_attached_file($attachment_id);
+        
+        // Update attachment with new file
+        $attachment_data = array(
+            'ID' => $attachment_id,
+            'post_title' => $new_title ?: basename($upload['file']),
+            'post_mime_type' => $upload['type']
+        );
+        
+        $update_result = wp_update_post($attachment_data);
+        
+        if (is_wp_error($update_result)) {
+            $logger->error('Failed to update attachment', array('error' => $update_result->get_error_message()));
+            wp_send_json_error('Failed to update attachment');
+        }
+        
+        // Update attachment metadata
+        update_attached_file($attachment_id, $upload['file']);
+        $attachment_metadata = wp_generate_attachment_metadata($attachment_id, $upload['file']);
+        wp_update_attachment_metadata($attachment_id, $attachment_metadata);
+        
+        // Delete the old file
+        if ($old_file_path && file_exists($old_file_path)) {
+            unlink($old_file_path);
+        }
+        
+        wp_send_json_success('Document replaced successfully');
+    }
+    
+    /**
+     * AJAX handler for renaming documents
+     */
+    public function ajaxRenameDocument() {
+        $logger = FileBird_FD_Logger::getInstance();
+        
+        // Check nonce for security
+        if (!wp_verify_nonce($_POST['filebird_fd_nonce'], 'filebird_fd_edit_nonce')) {
+            $logger->error('Security check failed for document rename', array('user_id' => get_current_user_id()));
+            wp_send_json_error('Security check failed');
+        }
+        
+        // Check user permissions
+        if (!current_user_can('edit_posts')) {
+            $logger->error('Insufficient permissions for document rename', array('user_id' => get_current_user_id()));
+            wp_send_json_error('Insufficient permissions');
+        }
+        
+        $attachment_id = intval($_POST['attachment_id']);
+        $new_title = sanitize_text_field($_POST['document_title']);
+        
+        if (empty($new_title)) {
+            $logger->error('Title cannot be empty');
+            wp_send_json_error('Title cannot be empty');
+        }
+        
+        // Validate attachment exists
+        $attachment = get_post($attachment_id);
+        if (!$attachment || $attachment->post_type !== 'attachment') {
+            $logger->error('Invalid attachment for rename', array('attachment_id' => $attachment_id));
+            wp_send_json_error('Invalid attachment');
+        }
+        
+        // Update attachment title
+        $update_result = wp_update_post(array(
+            'ID' => $attachment_id,
+            'post_title' => $new_title
+        ));
+        
+        if (is_wp_error($update_result)) {
+            $logger->error('Failed to update document title', array('error' => $update_result->get_error_message()));
+            wp_send_json_error('Failed to update document title');
+        }
+        
+        wp_send_json_success('Document renamed successfully');
+    }
+    
+    /**
+     * Check if user can edit documents
+     */
+    public static function canEditDocuments() {
+        return current_user_can('edit_posts');
+    }
+    
+    /**
+     * Get edit button HTML for a document
+     */
+    public static function getEditButton($attachment_id, $document_title) {
+        if (!self::canEditDocuments()) {
+            return '';
+        }
+        
+        $nonce = wp_create_nonce('filebird_fd_edit_nonce');
+        
+        return sprintf(
+            '<button type="button" class="filebird-docs-edit-btn" data-attachment-id="%d" data-document-title="%s" data-nonce="%s" title="%s">
+                <i class="filebird-docs-icon filebird-docs-icon-edit"></i>
+                <span class="filebird-docs-edit-text">%s</span>
+            </button>',
+            esc_attr($attachment_id),
+            esc_attr($document_title),
+            esc_attr($nonce),
+            esc_attr__('Edit Document', 'filebird-frontend-docs'),
+            esc_html__('Edit', 'filebird-frontend-docs')
+        );
     }
 } 
