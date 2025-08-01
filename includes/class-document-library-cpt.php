@@ -1064,28 +1064,63 @@ class FileBird_FD_Document_Library_CPT {
                     continue; // Skip non-existent folders
                 }
                 
-                // Get documents from this folder (and subfolders if enabled)
-                $documents = FileBird_FD_Helper::getAttachmentsByFolderIdRecursive($folder_id, array(
-                    'orderby' => 'menu_order',
-                    'order' => 'ASC',
-                    'limit' => -1,
-                    'include_subfolders' => $include_subfolders,
-                    'exclude_folders' => $exclude_folders
-                ));
+                // Get folder name for parent folder
+                $parent_folder_object = FileBird_FD_Helper::getFolderById($folder_id);
+                $parent_folder_name = ($parent_folder_object && isset($parent_folder_object->name)) ? $parent_folder_object->name : 'Unknown Folder (ID: ' . $folder_id . ')';
                 
-                // Add folder information to each document
-                foreach ($documents as $doc) {
-                    $doc->source_folder_id = $folder_id;
-                    $doc->source_folder_name = FileBird_FD_Helper::getFolderById($folder_id)->name ?? 'Unknown Folder';
-                    $all_documents[] = $doc;
+                // Get all subfolder IDs recursively
+                $all_subfolder_ids = FileBird_FD_Helper::getSubfolderIds($folder_id);
+                
+                // Filter out excluded subfolders
+                $included_subfolder_ids = $all_subfolder_ids;
+                if (!empty($exclude_folders)) {
+                    // First, get all subfolders of excluded folders
+                    $excluded_subfolders = array();
+                    foreach ($exclude_folders as $excluded_folder_id) {
+                        $excluded_subfolders = array_merge($excluded_subfolders, FileBird_FD_Helper::getSubfolderIds($excluded_folder_id));
+                    }
+                    
+                    // Combine original excluded folders with their subfolders
+                    $all_excluded_folders = array_merge($exclude_folders, $excluded_subfolders);
+                    
+                    // Filter out all excluded folders and their subfolders
+                    $included_subfolder_ids = array_diff($all_subfolder_ids, $all_excluded_folders);
                 }
                 
-                // Store folder info for display
-                $folder_info[$folder_id] = array(
-                    'id' => $folder_id,
-                    'name' => FileBird_FD_Helper::getFolderById($folder_id)->name ?? 'Unknown Folder',
-                    'count' => count($documents)
-                );
+                // Create list of all folders to process (parent + included subfolders)
+                $folders_to_process = array($folder_id);
+                if ($include_subfolders) {
+                    $folders_to_process = array_merge($folders_to_process, $included_subfolder_ids);
+                }
+                
+                // Get documents from each folder individually
+                foreach ($folders_to_process as $current_folder_id) {
+                    // Get documents from this specific folder (not recursively)
+                    $documents = FileBird_FD_Helper::getAttachmentsByFolderId($current_folder_id, array(
+                        'orderby' => 'menu_order',
+                        'order' => 'ASC',
+                        'limit' => -1,
+                        'include_metadata' => true
+                    ));
+                    
+                    // Get folder name for this specific folder
+                    $current_folder_object = FileBird_FD_Helper::getFolderById($current_folder_id);
+                    $current_folder_name = ($current_folder_object && isset($current_folder_object->name)) ? $current_folder_object->name : 'Unknown Folder (ID: ' . $current_folder_id . ')';
+                    
+                    // Add folder information to each document
+                    foreach ($documents as $doc) {
+                        $doc->source_folder_id = $current_folder_id;
+                        $doc->source_folder_name = $current_folder_name;
+                        $all_documents[] = $doc;
+                    }
+                    
+                    // Store folder info for display
+                    $folder_info[$current_folder_id] = array(
+                        'id' => $current_folder_id,
+                        'name' => $current_folder_name,
+                        'count' => count($documents)
+                    );
+                }
             }
             
             // Sort all documents by menu_order across all folders

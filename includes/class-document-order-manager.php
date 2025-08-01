@@ -144,47 +144,73 @@ class FileBird_FD_Document_Order_Manager {
                     continue; // Skip non-existent folders
                 }
                 
-                // Get documents from this folder (and subfolders if enabled)
-                $args = array(
-                    'orderby' => 'menu_order',
-                    'order' => 'ASC',
-                    'limit' => -1,
-                    'include_subfolders' => $include_subfolders,
-                    'exclude_folders' => $exclude_folders
-                );
-                error_log('FileBird FD Debug - Getting documents for folder ' . $folder_id . ' with args: ' . print_r($args, true));
+                // Get folder name for parent folder
+                $parent_folder_object = FileBird_FD_Helper::getFolderById($folder_id);
+                $parent_folder_name = ($parent_folder_object && isset($parent_folder_object->name)) ? $parent_folder_object->name : 'Unknown Folder (ID: ' . $folder_id . ')';
                 
-                $documents = FileBird_FD_Helper::getAttachmentsByFolderIdRecursive($folder_id, $args);
-                error_log('FileBird FD Debug - Found ' . count($documents) . ' documents in folder ' . $folder_id);
+                // Get all subfolder IDs recursively
+                $all_subfolder_ids = FileBird_FD_Helper::getSubfolderIds($folder_id);
+                error_log('FileBird FD Debug - All subfolder IDs for folder ' . $folder_id . ': ' . print_r($all_subfolder_ids, true));
                 
-                // Add folder information to each document
-                foreach ($documents as $doc) {
-                    $doc->source_folder_id = $folder_id;
-                    
-                    // Debug folder lookup
-                    $folder_object = FileBird_FD_Helper::getFolderById($folder_id);
-                    error_log('FileBird FD Debug - getFolderById(' . $folder_id . ') returned: ' . print_r($folder_object, true));
-                    
-                    if ($folder_object && isset($folder_object->name)) {
-                        $doc->source_folder_name = $folder_object->name;
-                        error_log('FileBird FD Debug - Using folder name: ' . $folder_object->name);
-                    } else {
-                        $doc->source_folder_name = 'Unknown Folder (ID: ' . $folder_id . ')';
-                        error_log('FileBird FD Debug - Folder object is null or missing name property');
+                // Filter out excluded subfolders
+                $included_subfolder_ids = $all_subfolder_ids;
+                if (!empty($exclude_folders)) {
+                    // First, get all subfolders of excluded folders
+                    $excluded_subfolders = array();
+                    foreach ($exclude_folders as $excluded_folder_id) {
+                        $excluded_subfolders = array_merge($excluded_subfolders, FileBird_FD_Helper::getSubfolderIds($excluded_folder_id));
                     }
                     
-                    $all_documents[] = $doc;
+                    // Combine original excluded folders with their subfolders
+                    $all_excluded_folders = array_merge($exclude_folders, $excluded_subfolders);
+                    
+                    // Filter out all excluded folders and their subfolders
+                    $included_subfolder_ids = array_diff($all_subfolder_ids, $all_excluded_folders);
+                    
+                    error_log('FileBird FD Debug - Excluded subfolders: ' . print_r($exclude_folders, true));
+                    error_log('FileBird FD Debug - All excluded folders (including subfolders): ' . print_r($all_excluded_folders, true));
+                    error_log('FileBird FD Debug - Included subfolder IDs after filtering: ' . print_r($included_subfolder_ids, true));
                 }
                 
-                // Store folder info for display
-                $folder_object = FileBird_FD_Helper::getFolderById($folder_id);
-                $folder_name = ($folder_object && isset($folder_object->name)) ? $folder_object->name : 'Unknown Folder (ID: ' . $folder_id . ')';
+                // Create list of all folders to process (parent + included subfolders)
+                $folders_to_process = array($folder_id);
+                if ($include_subfolders) {
+                    $folders_to_process = array_merge($folders_to_process, $included_subfolder_ids);
+                }
+                error_log('FileBird FD Debug - Folders to process: ' . print_r($folders_to_process, true));
                 
-                $folder_info[$folder_id] = array(
-                    'id' => $folder_id,
-                    'name' => $folder_name,
-                    'count' => count($documents)
-                );
+                // Get documents from each folder individually
+                foreach ($folders_to_process as $current_folder_id) {
+                    error_log('FileBird FD Debug - Getting documents from folder: ' . $current_folder_id);
+                    
+                    // Get documents from this specific folder (not recursively)
+                    $documents = FileBird_FD_Helper::getAttachmentsByFolderId($current_folder_id, array(
+                        'orderby' => 'menu_order',
+                        'order' => 'ASC',
+                        'limit' => -1,
+                        'include_metadata' => true
+                    ));
+                    
+                    error_log('FileBird FD Debug - Found ' . count($documents) . ' documents in folder ' . $current_folder_id);
+                    
+                    // Get folder name for this specific folder
+                    $current_folder_object = FileBird_FD_Helper::getFolderById($current_folder_id);
+                    $current_folder_name = ($current_folder_object && isset($current_folder_object->name)) ? $current_folder_object->name : 'Unknown Folder (ID: ' . $current_folder_id . ')';
+                    
+                    // Add folder information to each document
+                    foreach ($documents as $doc) {
+                        $doc->source_folder_id = $current_folder_id;
+                        $doc->source_folder_name = $current_folder_name;
+                        $all_documents[] = $doc;
+                    }
+                    
+                    // Store folder info for display
+                    $folder_info[$current_folder_id] = array(
+                        'id' => $current_folder_id,
+                        'name' => $current_folder_name,
+                        'count' => count($documents)
+                    );
+                }
             }
             
             error_log('FileBird FD Debug - Total documents collected: ' . count($all_documents));

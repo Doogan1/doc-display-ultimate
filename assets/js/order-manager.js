@@ -293,10 +293,40 @@
                 return;
             }
             
+            // Group documents by source folder
+            var groupedDocuments = {};
+            documents.forEach(function(doc) {
+                var folderName = doc.source_folder_name || 'Unknown Folder';
+                if (!groupedDocuments[folderName]) {
+                    groupedDocuments[folderName] = [];
+                }
+                groupedDocuments[folderName].push(doc);
+            });
+            
             var html = '';
-            documents.forEach(function(doc, index) {
-                html += this.buildDocumentItemHtml(doc, index + 1);
-            }.bind(this));
+            var globalOrder = 1;
+            var self = this; // Store reference to 'this'
+            
+            // Render each folder group
+            Object.keys(groupedDocuments).forEach(function(folderName) {
+                var folderDocs = groupedDocuments[folderName];
+                
+                // Add folder header
+                html += '<div class="filebird-fd-folder-group">';
+                html += '<div class="filebird-fd-folder-header">';
+                html += '<h4 class="filebird-fd-folder-title">' + self.escapeHtml(folderName) + '</h4>';
+                html += '<span class="filebird-fd-folder-count">' + folderDocs.length + ' document(s)</span>';
+                html += '</div>';
+                html += '<div class="filebird-fd-folder-documents">';
+                
+                // Render documents in this folder with fresh ordering (1, 2, 3...)
+                folderDocs.forEach(function(doc, index) {
+                    html += self.buildDocumentItemHtml(doc, index + 1); // Start fresh at 1 for each folder
+                });
+                
+                html += '</div>'; // Close folder-documents
+                html += '</div>'; // Close folder-group
+            });
             
             $documentList.html(html);
         },

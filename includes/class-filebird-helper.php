@@ -207,7 +207,7 @@ class FileBird_FD_Helper {
             foreach ($all_folders as $folder) {
                 if (isset($folder->parent) && $folder->parent == $folder_id) {
                     $subfolder_ids[] = $folder->id;
-                    error_log('FileBird FD Debug - Found direct subfolder: ' . $folder->id);
+                    error_log('FileBird FD Debug - Found direct subfolder: ' . $folder->id . ' (parent: ' . $folder->parent . ')');
                     
                     // Recursively get subfolders of this subfolder
                     $nested_subfolders = self::getSubfolderIds($folder->id);
@@ -215,7 +215,7 @@ class FileBird_FD_Helper {
                 }
             }
             
-            error_log('FileBird FD Debug - Subfolder IDs found: ' . print_r($subfolder_ids, true));
+            error_log('FileBird FD Debug - All subfolder IDs found: ' . print_r($subfolder_ids, true));
             
             return $subfolder_ids;
         } catch (Exception $e) {
@@ -259,6 +259,7 @@ class FileBird_FD_Helper {
                 
                 // Filter out excluded folders
                 if (!empty($args['exclude_folders'])) {
+                    error_log('FileBird FD Debug - Excluding folders: ' . print_r($args['exclude_folders'], true));
                     $all_folder_ids = array_diff($all_folder_ids, $args['exclude_folders']);
                     error_log('FileBird FD Debug - After excluding folders: ' . print_r($all_folder_ids, true));
                 }

@@ -132,6 +132,52 @@
     font-style: italic;
 }
 
+/* Folder Group Styles */
+.filebird-fd-folder-group {
+    margin-bottom: 20px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background: #fff;
+}
+
+.filebird-fd-folder-header {
+    background: #f8f9fa;
+    padding: 12px 15px;
+    border-bottom: 1px solid #ddd;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.filebird-fd-folder-title {
+    margin: 0;
+    color: #23282d;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.filebird-fd-folder-count {
+    background: #0073aa;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 3px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.filebird-fd-folder-documents {
+    padding: 10px;
+}
+
+.filebird-fd-folder-documents .filebird-fd-document-item {
+    margin-bottom: 8px;
+    border-radius: 4px;
+}
+
+.filebird-fd-folder-documents .filebird-fd-document-item:last-child {
+    margin-bottom: 0;
+}
+
 /* Document List Styles */
 .filebird-fd-document-list {
     margin-top: 20px;
