@@ -47,6 +47,12 @@
                 });
             }
 
+            // Prevent text selection on document items during drag
+            $(document).on('selectstart', '.filebird-fd-document-item', function(e) {
+                e.preventDefault();
+                return false;
+            });
+
             // Order control events
             $('#save-order').on('click', function() {
                 FileBirdFDOrder.OrderManager.saveOrder();
@@ -329,6 +335,9 @@
             });
             
             $documentList.html(html);
+            
+            // Initialize sortable after DOM is updated (removed setTimeout to prevent double initialization)
+            self.initializeSortable();
         },
 
         buildDocumentItemHtml: function(doc, order) {
@@ -372,20 +381,79 @@
         initializeSortable: function() {
             var self = this;
             
-            $('#document-list').sortable({
-                handle: '.filebird-fd-document-drag-handle',
-                placeholder: 'filebird-fd-document-item ui-sortable-placeholder',
-                helper: function(e, item) {
-                    return item.clone().addClass('ui-sortable-helper');
-                },
-                start: function(e, ui) {
-                    ui.item.addClass('dragging');
-                },
-                stop: function(e, ui) {
-                    ui.item.removeClass('dragging');
-                    self.updateOrderNumbers();
-                    self.markAsDirty();
+            console.log('=== SORTABLE DEBUGGING ===');
+            console.log('Initializing sortables for individual folder groups...');
+            
+            // Check for existing sortable instances
+            console.log('=== CHECKING FOR EXISTING SORTABLE INSTANCES ===');
+            $('.ui-sortable').each(function(index) {
+                console.log('Found sortable instance ' + index + ':', this);
+                console.log('Element:', this);
+                console.log('Classes:', this.className);
+                console.log('Has sortable instance:', $(this).sortable('instance'));
+            });
+            
+            // Destroy any existing sortable on document-list
+            if ($('#document-list').sortable('instance')) {
+                console.log('Destroying existing sortable on document-list...');
+                $('#document-list').sortable('destroy');
+            }
+            
+            // Initialize sortables for each folder group's documents
+            $('.filebird-fd-folder-documents').each(function(index) {
+                var $folderDocuments = $(this);
+                var folderName = $folderDocuments.closest('.filebird-fd-folder-group').find('.filebird-fd-folder-title').text();
+                
+                console.log('Initializing sortable for folder:', folderName);
+                console.log('Document items in this folder:', $folderDocuments.find('.filebird-fd-document-item').length);
+                
+                // Initialize sortable for this folder's documents
+                $folderDocuments.sortable({
+                    handle: '.filebird-fd-document-drag-handle',
+                    items: '.filebird-fd-document-item',
+                    placeholder: 'filebird-fd-document-item ui-sortable-placeholder',
+                    helper: function(e, item) {
+                        console.log('Helper function called for folder:', folderName);
+                        return item.clone().addClass('ui-sortable-helper');
+                    },
+                    start: function(e, ui) {
+                        ui.item.addClass('dragging');
+                        console.log('Drag started on item in folder:', folderName);
+                    },
+                    stop: function(e, ui) {
+                        ui.item.removeClass('dragging');
+                        self.updateOrderNumbers();
+                        self.markAsDirty();
+                        console.log('Drag stopped, order updated for folder:', folderName);
+                    },
+                    // Prevent dragging on folder headers
+                    cancel: '.filebird-fd-folder-header'
+                });
+                
+                console.log('Sortable initialized for folder:', folderName);
+            });
+            
+            console.log('All folder sortables initialized');
+            
+            // Test if sortables are working
+            $('.filebird-fd-folder-documents').each(function(index) {
+                if ($(this).sortable('instance')) {
+                    console.log('Sortable instance created successfully for folder documents ' + index);
+                } else {
+                    console.error('Failed to create sortable instance for folder documents ' + index);
                 }
+            });
+            
+            // Final check - what's sortable now?
+            console.log('=== FINAL SORTABLE CHECK ===');
+            $('.ui-sortable').each(function(index) {
+                console.log('Sortable instance ' + index + ':', this);
+                console.log('Element classes:', this.className);
+            });
+            
+            // Test drag handle functionality
+            $('.filebird-fd-document-drag-handle').on('mousedown', function(e) {
+                console.log('Drag handle mousedown detected');
             });
         },
 

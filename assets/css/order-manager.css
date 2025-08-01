@@ -135,18 +135,21 @@
 /* Folder Group Styles */
 .filebird-fd-folder-group {
     margin-bottom: 20px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    background: #fff;
+    border: 1px solid #e1e1e1;
+    border-radius: 6px;
+    overflow: hidden;
 }
 
 .filebird-fd-folder-header {
     background: #f8f9fa;
     padding: 12px 15px;
-    border-bottom: 1px solid #ddd;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+    border-bottom: 1px solid #e1e1e1;
+    cursor: default; /* Show that this is not draggable */
+    user-select: none; /* Prevent text selection */
+}
+
+.filebird-fd-folder-header:hover {
+    background: #f0f0f0; /* Subtle hover effect */
 }
 
 .filebird-fd-folder-title {
@@ -154,28 +157,31 @@
     color: #23282d;
     font-size: 16px;
     font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
 }
 
 .filebird-fd-folder-count {
     background: #0073aa;
     color: white;
-    padding: 4px 8px;
-    border-radius: 3px;
+    padding: 2px 8px;
+    border-radius: 12px;
     font-size: 12px;
     font-weight: 500;
 }
 
 .filebird-fd-folder-documents {
-    padding: 10px;
+    background: #fff;
+    padding: 0;
 }
 
 .filebird-fd-folder-documents .filebird-fd-document-item {
-    margin-bottom: 8px;
-    border-radius: 4px;
+    border-bottom: 1px solid #f0f0f0;
 }
 
 .filebird-fd-folder-documents .filebird-fd-document-item:last-child {
-    margin-bottom: 0;
+    border-bottom: none;
 }
 
 /* Document List Styles */
@@ -191,15 +197,20 @@
 .filebird-fd-document-item {
     display: flex;
     align-items: center;
-    padding: 12px;
-    background: white;
-    border: 1px solid #ddd;
+    padding: 12px 15px;
+    background: #fff;
+    border: 1px solid #e1e1e1;
     border-radius: 4px;
     margin-bottom: 8px;
     transition: all 0.2s ease;
+    user-select: none; /* Prevent text selection */
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
 }
 
 .filebird-fd-document-item:hover {
+    background: #f8f9fa;
     border-color: #0073aa;
     box-shadow: 0 2px 4px rgba(0, 115, 170, 0.1);
 }
@@ -212,27 +223,39 @@
 .filebird-fd-document-item.ui-sortable-placeholder {
     background: #f0f8ff;
     border: 2px dashed #0073aa;
-    opacity: 0.6;
+    opacity: 0.7;
 }
 
 .filebird-fd-document-item:last-child {
-    border-bottom: none;
+    margin-bottom: 0;
 }
 
 .filebird-fd-document-drag-handle {
     width: 20px;
     height: 20px;
-    margin-right: 15px;
-    color: #999;
+    background: #f0f0f0;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+    margin-right: 12px;
     cursor: move;
     display: flex;
     align-items: center;
     justify-content: center;
+    user-select: none; /* Prevent text selection */
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+}
+
+.filebird-fd-document-drag-handle:hover {
+    background: #e0e0e0;
+    border-color: #0073aa;
 }
 
 .filebird-fd-document-drag-handle::before {
     content: "⋮⋮";
-    font-size: 16px;
+    color: #666;
+    font-size: 12px;
     line-height: 1;
 }
 
