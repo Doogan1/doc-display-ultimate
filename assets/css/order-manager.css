@@ -50,6 +50,140 @@
     display: block;
 }
 
+/* Folder Summary Styles */
+.filebird-fd-folder-summary {
+    background: #f9f9f9;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 15px;
+    margin-bottom: 20px;
+}
+
+.filebird-fd-summary-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.filebird-fd-summary-header h3 {
+    margin: 0;
+    color: #23282d;
+    font-size: 16px;
+}
+
+.filebird-fd-summary-stats {
+    display: flex;
+    gap: 15px;
+}
+
+.filebird-fd-stat {
+    background: #0073aa;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 3px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.filebird-fd-folder-breakdown h4 {
+    margin: 0 0 10px 0;
+    color: #23282d;
+    font-size: 14px;
+}
+
+.filebird-fd-folder-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.filebird-fd-folder-item-summary {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid #eee;
+}
+
+.filebird-fd-folder-item-summary:last-child {
+    border-bottom: none;
+}
+
+.filebird-fd-folder-name {
+    font-weight: 500;
+    color: #23282d;
+}
+
+.filebird-fd-folder-count {
+    background: #e7f3ff;
+    color: #0073aa;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 11px;
+    font-weight: 500;
+}
+
+/* Document Folder Indicator */
+.filebird-fd-document-folder {
+    font-size: 11px;
+    color: #666;
+    margin-top: 2px;
+    font-style: italic;
+}
+
+/* Folder Group Styles */
+.filebird-fd-folder-group {
+    margin-bottom: 20px;
+    border: 1px solid #e1e1e1;
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.filebird-fd-folder-header {
+    background: #f8f9fa;
+    padding: 12px 15px;
+    border-bottom: 1px solid #e1e1e1;
+    cursor: default; /* Show that this is not draggable */
+    user-select: none; /* Prevent text selection */
+}
+
+.filebird-fd-folder-header:hover {
+    background: #f0f0f0; /* Subtle hover effect */
+}
+
+.filebird-fd-folder-title {
+    margin: 0;
+    color: #23282d;
+    font-size: 16px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.filebird-fd-folder-count {
+    background: #0073aa;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.filebird-fd-folder-documents {
+    background: #fff;
+    padding: 0;
+}
+
+.filebird-fd-folder-documents .filebird-fd-document-item {
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.filebird-fd-folder-documents .filebird-fd-document-item:last-child {
+    border-bottom: none;
+}
+
 /* Document List Styles */
 .filebird-fd-document-list {
     margin-top: 20px;
@@ -59,55 +193,69 @@
     min-height: 200px;
 }
 
+/* Enhanced Document Item Styles */
 .filebird-fd-document-item {
     display: flex;
     align-items: center;
     padding: 12px 15px;
-    border-bottom: 1px solid #eee;
     background: #fff;
-    cursor: move;
+    border: 1px solid #e1e1e1;
+    border-radius: 4px;
+    margin-bottom: 8px;
     transition: all 0.2s ease;
-    position: relative;
+    user-select: none; /* Prevent text selection */
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
 }
 
 .filebird-fd-document-item:hover {
     background: #f8f9fa;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    border-color: #0073aa;
+    box-shadow: 0 2px 4px rgba(0, 115, 170, 0.1);
 }
 
 .filebird-fd-document-item.ui-sortable-helper {
-    background: #fff;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
     transform: rotate(2deg);
-    z-index: 1000;
 }
 
 .filebird-fd-document-item.ui-sortable-placeholder {
-    background: #e3f2fd;
+    background: #f0f8ff;
     border: 2px dashed #0073aa;
-    height: 60px;
-    margin: 0;
-    padding: 0;
+    opacity: 0.7;
 }
 
 .filebird-fd-document-item:last-child {
-    border-bottom: none;
+    margin-bottom: 0;
 }
 
 .filebird-fd-document-drag-handle {
     width: 20px;
     height: 20px;
-    margin-right: 15px;
-    color: #999;
+    background: #f0f0f0;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+    margin-right: 12px;
     cursor: move;
     display: flex;
     align-items: center;
     justify-content: center;
+    user-select: none; /* Prevent text selection */
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+}
+
+.filebird-fd-document-drag-handle:hover {
+    background: #e0e0e0;
+    border-color: #0073aa;
 }
 
 .filebird-fd-document-drag-handle::before {
     content: "⋮⋮";
-    font-size: 16px;
+    color: #666;
+    font-size: 12px;
     line-height: 1;
 }
 
@@ -265,6 +413,22 @@
         width: 50px;
         font-size: 12px;
         padding: 3px 6px;
+    }
+
+    .filebird-fd-summary-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+    
+    .filebird-fd-summary-stats {
+        gap: 10px;
+    }
+    
+    .filebird-fd-folder-item-summary {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 5px;
     }
 }
 

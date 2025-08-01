@@ -1,4 +1,4 @@
-# FileBird Frontend Documents Plugin - Project Context
+# FileBird Frontend Documents Plugin - Complete Project Documentation
 
 ## Project Overview
 
@@ -50,7 +50,8 @@ doc-display-ultimate/
 │   └── js/
 │       ├── admin.js           # Admin interface functionality
 │       ├── frontend.js        # Frontend accordion and interactions
-│       └── order-manager.js   # Document order manager functionality
+│       ├── order-manager.js   # Document order manager functionality
+│       └── document-editor.js # Document editing modal functionality
 ├── includes/
 │   ├── class-admin.php        # Admin interface class
 │   ├── class-document-display.php  # Main plugin class
@@ -67,151 +68,748 @@ doc-display-ultimate/
 │   ├── document-grouped-list.php    # Nested folder list
 │   └── document-grouped-table.php   # Nested folder table
 ├── DOCUMENT_LIBRARY_GUIDE.md  # User guide for Document Library CPT
+├── DOCUMENT_EDITING_FEATURE.md # Documentation for document editing
 └── filebird-frontend-documents.php  # Main plugin file
 ```
 
-### Core Classes
+## Complete Class Documentation
 
-#### FileBird_FD_Document_Display (Main Plugin Class)
-- Handles plugin initialization and WordPress hooks
-- Manages shortcode registration and processing
-- Coordinates between admin and frontend functionality
+### 1. FileBirdFrontendDocuments (Main Plugin Class)
+**File**: `filebird-frontend-documents.php`
 
-#### FileBird_FD_Document_Library_CPT (Document Library Custom Post Type)
-- Registers and manages the `document_library` custom post type
-- Provides admin interface for library configuration
-- Handles meta box saving and shortcode generation
-- Integrates document order manager functionality
-- Manages frontend editor button display
-- Tracks library usage across the site
+#### Methods
 
-#### FileBird_FD_Document_Order_Manager (Document Order Manager)
-- Provides drag-and-drop document reordering
-- Integrated into Document Library CPT settings
-- Handles AJAX operations for loading and saving document orders
-- Supports real-time preview and reset functionality
+##### `getInstance()`
+- **Purpose**: Singleton pattern to get plugin instance
+- **Returns**: `FileBirdFrontendDocuments` instance
+- **Usage**: `FileBirdFrontendDocuments::getInstance()`
 
-#### FileBird_FD_Admin (Admin Interface)
-- Provides tree-based folder selector in admin
-- Handles subfolder exclusion functionality
-- Manages shortcode generation and preview
+##### `isFileBirdActive()`
+- **Purpose**: Check if FileBird plugin is active
+- **Returns**: `boolean`
+- **Usage**: Internal method called during initialization
 
-#### FileBird_FD_FileBird_Helper (FileBird Integration)
-- Interfaces with FileBird plugin API
-- Retrieves folder structures and attachments
-- Handles recursive subfolder loading
+##### `filebirdMissingNotice()`
+- **Purpose**: Display admin notice when FileBird is missing
+- **Returns**: `void`
+- **Usage**: Called via WordPress admin_notices hook
 
-#### FileBird_FD_Shortcode_Handler (Shortcode Processing)
-- Processes shortcode attributes
-- Determines appropriate template
-- Prepares data for template rendering
-- Handles Base64-encoded accordion states for complex data
+##### `loadDependencies()`
+- **Purpose**: Load all required class files
+- **Returns**: `void`
+- **Usage**: Internal method called during initialization
 
-## Shortcode System
+##### `initComponents()`
+- **Purpose**: Initialize all plugin components
+- **Returns**: `void`
+- **Usage**: Internal method called during initialization
 
-### Basic Usage
+##### `registerHooks()`
+- **Purpose**: Register WordPress hooks
+- **Returns**: `void`
+- **Usage**: Internal method called during initialization
+
+##### `enqueueScripts()`
+- **Purpose**: Enqueue frontend scripts and styles
+- **Returns**: `void`
+- **Usage**: Called via wp_enqueue_scripts hook
+
+##### `loadTextDomain()`
+- **Purpose**: Load plugin text domain for translations
+- **Returns**: `void`
+- **Usage**: Called via init hook
+
+##### `activate()`
+- **Purpose**: Plugin activation hook
+- **Returns**: `void`
+- **Usage**: Called via register_activation_hook
+
+##### `deactivate()`
+- **Purpose**: Plugin deactivation hook
+- **Returns**: `void`
+- **Usage**: Called via register_deactivation_hook
+
+### 2. FileBird_FD_Document_Display Class
+**File**: `includes/class-document-display.php`
+
+#### Methods
+
+##### `__construct()`
+- **Purpose**: Initialize AJAX handlers
+- **Returns**: `void`
+- **Usage**: Called automatically when class is instantiated
+
+##### `ajaxGetFolders()`
+- **Purpose**: AJAX handler for getting folders
+- **Input**: `$_POST['nonce']`
+- **Returns**: JSON response with folder data
+- **Usage**: Called via AJAX request
+
+##### `ajaxGetDocuments()`
+- **Purpose**: AJAX handler for getting documents
+- **Input**: `$_POST['folder_id']`, `$_POST['orderby']`, `$_POST['order']`, `$_POST['limit']`, `$_POST['include_subfolders']`
+- **Returns**: JSON response with document data
+- **Usage**: Called via AJAX request
+
+##### `renderGrid($attachments, $atts)`
+- **Purpose**: Render document grid layout
+- **Input**: `array $attachments`, `array $atts`
+- **Returns**: `void` (outputs HTML)
+- **Usage**: Called by template files
+
+##### `renderList($attachments, $atts)`
+- **Purpose**: Render document list layout
+- **Input**: `array $attachments`, `array $atts`
+- **Returns**: `void` (outputs HTML)
+- **Usage**: Called by template files
+
+##### `renderTable($attachments, $atts)`
+- **Purpose**: Render document table layout
+- **Input**: `array $attachments`, `array $atts`
+- **Returns**: `void` (outputs HTML)
+- **Usage**: Called by template files
+
+##### `getFileTypeIcon($file_type)`
+- **Purpose**: Get icon for file type
+- **Input**: `string $file_type`
+- **Returns**: `string` (HTML for icon)
+- **Usage**: Called by render methods
+
+##### `ajaxReplaceDocument()`
+- **Purpose**: AJAX handler for replacing documents
+- **Input**: `$_POST['attachment_id']`, `$_POST['document_title']`, `$_POST['document_file']`, `$_POST['filebird_fd_nonce']`
+- **Returns**: JSON response
+- **Usage**: Called via AJAX request
+
+##### `ajaxRenameDocument()`
+- **Purpose**: AJAX handler for renaming documents
+- **Input**: `$_POST['attachment_id']`, `$_POST['document_title']`, `$_POST['filebird_fd_nonce']`
+- **Returns**: JSON response
+- **Usage**: Called via AJAX request
+
+##### `canEditDocuments()`
+- **Purpose**: Check if user can edit documents
+- **Returns**: `boolean`
+- **Usage**: Called by template files
+
+##### `getEditButton($attachment_id, $document_title)`
+- **Purpose**: Get edit button HTML
+- **Input**: `int $attachment_id`, `string $document_title`
+- **Returns**: `string` (HTML for edit button)
+- **Usage**: Called by template files
+
+### 3. FileBird_FD_Helper Class
+**File**: `includes/class-filebird-helper.php`
+
+#### Methods
+
+##### `isFileBirdAvailable()`
+- **Purpose**: Check if FileBird plugin is available
+- **Returns**: `boolean`
+- **Usage**: Called before any FileBird operations
+
+##### `getAllFolders($prepend_default = null)`
+- **Purpose**: Get all folders from FileBird
+- **Input**: `mixed $prepend_default` (optional)
+- **Returns**: `array` of folder objects
+- **Usage**: Called by admin interface and folder selectors
+
+##### `getFolderById($folder_id)`
+- **Purpose**: Get folder by ID
+- **Input**: `int $folder_id`
+- **Returns**: `object|null` (folder object or null)
+- **Usage**: Called to validate folder existence
+
+##### `getAttachmentIdsByFolderId($folder_id)`
+- **Purpose**: Get attachment IDs by folder ID
+- **Input**: `int $folder_id`
+- **Returns**: `array` of attachment IDs
+- **Usage**: Called to get documents in a folder
+
+##### `getAttachmentCountByFolderId($folder_id)`
+- **Purpose**: Get attachment count by folder ID
+- **Input**: `int $folder_id`
+- **Returns**: `int` (count)
+- **Usage**: Called to display folder statistics
+
+##### `getFolderTree()`
+- **Purpose**: Get hierarchical folder tree
+- **Returns**: `array` (nested folder structure)
+- **Usage**: Called by admin interface for folder selector
+
+##### `getHierarchicalFolderOptions($include_all = true, $level = 0)`
+- **Purpose**: Get hierarchical folder options for dropdowns
+- **Input**: `boolean $include_all`, `int $level`
+- **Returns**: `array` (hierarchical options)
+- **Usage**: Called by admin interface
+
+##### `getSubfolderIds($folder_id)`
+- **Purpose**: Get all subfolder IDs recursively
+- **Input**: `int $folder_id`
+- **Returns**: `array` of subfolder IDs
+- **Usage**: Called when including subfolders
+
+##### `getAttachmentsByFolderIdRecursive($folder_id, $args = array())`
+- **Purpose**: Get attachments from folder and subfolders
+- **Input**: `int $folder_id`, `array $args`
+- **Returns**: `array` of attachment objects
+- **Usage**: Called by shortcode handler
+
+##### `getAttachmentsGroupedByFolder($folder_id, $args = array())`
+- **Purpose**: Get attachments grouped by folder structure
+- **Input**: `int $folder_id`, `array $args`
+- **Returns**: `array` (grouped attachment structure)
+- **Usage**: Called when group_by_folder is true
+
+##### `getAttachmentsByFolderId($folder_id, $args = array())`
+- **Purpose**: Get attachments with metadata by folder ID
+- **Input**: `int $folder_id`, `array $args`
+- **Returns**: `array` of attachment objects with metadata
+- **Usage**: Called by various components
+
+##### `getFileSize($attachment_id)`
+- **Purpose**: Get file size in human readable format
+- **Input**: `int $attachment_id`
+- **Returns**: `string` (formatted file size)
+- **Usage**: Called to display file sizes
+
+##### `getFolderPath($folder_id)`
+- **Purpose**: Get folder path as string
+- **Input**: `int $folder_id`
+- **Returns**: `string` (folder path)
+- **Usage**: Called to display folder hierarchy
+
+##### `folderExists($folder_id)`
+- **Purpose**: Check if folder exists
+- **Input**: `int $folder_id`
+- **Returns**: `boolean`
+- **Usage**: Called to validate folder IDs
+
+##### `getFolderOptions($include_all = true)`
+- **Purpose**: Get folder options for select dropdown
+- **Input**: `boolean $include_all`
+- **Returns**: `array` (folder options)
+- **Usage**: Called by admin interface
+
+### 4. FileBird_FD_Shortcode_Handler Class
+**File**: `includes/class-shortcode-handler.php`
+
+#### Methods
+
+##### `__construct()`
+- **Purpose**: Initialize shortcode registration
+- **Returns**: `void`
+- **Usage**: Called automatically when class is instantiated
+
+##### `registerShortcode()`
+- **Purpose**: Register the filebird_docs shortcode
+- **Returns**: `void`
+- **Usage**: Called via init hook
+
+##### `renderShortcode($atts)`
+- **Purpose**: Render the shortcode
+- **Input**: `array $atts` (shortcode attributes)
+- **Returns**: `string` (HTML output)
+- **Usage**: Called by WordPress shortcode system
+
+##### `renderTemplate($layout, $data)`
+- **Purpose**: Render the appropriate template
+- **Input**: `string $layout`, `array $data`
+- **Returns**: `void` (outputs HTML)
+- **Usage**: Internal method called by renderShortcode
+
+##### `renderDefaultTemplate($data)`
+- **Purpose**: Render default template as fallback
+- **Input**: `array $data`
+- **Returns**: `void` (outputs HTML)
+- **Usage**: Internal method called when template files missing
+
+##### `getShortcodeDocs()`
+- **Purpose**: Get shortcode documentation
+- **Returns**: `string` (documentation HTML)
+- **Usage**: Called by admin interface
+
+### 5. FileBird_FD_Document_Order_Manager Class
+**File**: `includes/class-document-order-manager.php`
+
+#### Methods
+
+##### `__construct()`
+- **Purpose**: Initialize order manager functionality
+- **Returns**: `void`
+- **Usage**: Called automatically when class is instantiated
+
+##### `addOrderManagerMenu()`
+- **Purpose**: Add order manager menu
+- **Returns**: `void`
+- **Usage**: Called via admin_menu hook
+
+##### `enqueueOrderManagerScripts($hook)`
+- **Purpose**: Enqueue scripts and styles for order manager
+- **Input**: `string $hook`
+- **Returns**: `void`
+- **Usage**: Called via admin_enqueue_scripts hook
+
+##### `ajaxGetDocumentsForOrdering()`
+- **Purpose**: AJAX handler for getting documents for ordering
+- **Input**: `$_POST['nonce']`, `$_POST['folder_id']`
+- **Returns**: JSON response
+- **Usage**: Called via AJAX request
+
+##### `ajaxUpdateDocumentOrder()`
+- **Purpose**: AJAX handler for updating document order
+- **Input**: `$_POST['nonce']`, `$_POST['folder_id']`, `$_POST['document_order']`
+- **Returns**: JSON response
+- **Usage**: Called via AJAX request
+
+##### `ajaxGetFoldersOrderManager()`
+- **Purpose**: AJAX handler for getting folders in order manager
+- **Input**: `$_POST['nonce']`
+- **Returns**: JSON response
+- **Usage**: Called via AJAX request
+
+##### `ajaxGetFolderDocuments()`
+- **Purpose**: AJAX handler for getting folder documents
+- **Input**: `$_POST['nonce']`, `$_POST['folder_id']`
+- **Returns**: JSON response
+- **Usage**: Called via AJAX request
+
+##### `getDocumentsWithOrder($folder_id)`
+- **Purpose**: Get documents with their current order
+- **Input**: `int $folder_id`
+- **Returns**: `array` of document objects
+- **Usage**: Internal method called by AJAX handlers
+
+##### `updateDocumentOrder($folder_id, $document_order)`
+- **Purpose**: Update document order in database
+- **Input**: `int $folder_id`, `array $document_order`
+- **Returns**: `boolean` (success status)
+- **Usage**: Internal method called by AJAX handlers
+
+##### `orderManagerPage()`
+- **Purpose**: Order manager page content
+- **Returns**: `void` (outputs HTML)
+- **Usage**: Called by WordPress admin system
+
+### 6. FileBird_FD_Admin Class
+**File**: `includes/class-admin.php`
+
+#### Methods
+
+##### `__construct()`
+- **Purpose**: Initialize admin functionality
+- **Returns**: `void`
+- **Usage**: Called automatically when class is instantiated
+
+##### `addAdminMenu()`
+- **Purpose**: Add admin menu
+- **Returns**: `void`
+- **Usage**: Called via admin_menu hook
+
+##### `enqueueAdminScripts($hook)`
+- **Purpose**: Enqueue admin scripts and styles
+- **Input**: `string $hook`
+- **Returns**: `void`
+- **Usage**: Called via admin_enqueue_scripts hook
+
+##### `ajaxGetFoldersAdmin()`
+- **Purpose**: AJAX handler for getting folders in admin
+- **Input**: `$_POST['nonce']`
+- **Returns**: JSON response
+- **Usage**: Called via AJAX request
+
+##### `adminPage()`
+- **Purpose**: Admin page content
+- **Returns**: `void` (outputs HTML)
+- **Usage**: Called by WordPress admin system
+
+### 7. FileBird_FD_Document_Library_CPT Class
+**File**: `includes/class-document-library-cpt.php`
+
+#### Methods
+
+##### `__construct()`
+- **Purpose**: Initialize document library CPT functionality
+- **Returns**: `void`
+- **Usage**: Called automatically when class is instantiated
+
+##### `registerPostType()`
+- **Purpose**: Register the document_library custom post type
+- **Returns**: `void`
+- **Usage**: Called via init hook
+
+##### `addMetaBoxes()`
+- **Purpose**: Add meta boxes for the custom post type
+- **Returns**: `void`
+- **Usage**: Called via add_meta_boxes hook
+
+##### `renderSettingsMetaBox($post)`
+- **Purpose**: Render settings meta box
+- **Input**: `WP_Post $post`
+- **Returns**: `void` (outputs HTML)
+- **Usage**: Called by WordPress meta box system
+
+##### `renderShortcodeMetaBox($post)`
+- **Purpose**: Render shortcode meta box
+- **Input**: `WP_Post $post`
+- **Returns**: `void` (outputs HTML)
+- **Usage**: Called by WordPress meta box system
+
+##### `renderUsageMetaBox($post)`
+- **Purpose**: Render usage meta box
+- **Input**: `WP_Post $post`
+- **Returns**: `void` (outputs HTML)
+- **Usage**: Called by WordPress meta box system
+
+##### `saveMetaBoxes($post_id)`
+- **Purpose**: Save meta box data
+- **Input**: `int $post_id`
+- **Returns**: `void`
+- **Usage**: Called via save_post hook
+
+##### `registerShortcode()`
+- **Purpose**: Register the render_document_library shortcode
+- **Returns**: `void`
+- **Usage**: Called via init hook
+
+##### `renderDocumentLibrary($atts)`
+- **Purpose**: Render document library shortcode
+- **Input**: `array $atts`
+- **Returns**: `string` (HTML output)
+- **Usage**: Called by WordPress shortcode system
+
+##### `enqueueAdminScripts($hook)`
+- **Purpose**: Enqueue admin scripts for document library
+- **Input**: `string $hook`
+- **Returns**: `void`
+- **Usage**: Called via admin_enqueue_scripts hook
+
+##### `enqueueEditorStyles()`
+- **Purpose**: Enqueue editor styles for frontend
+- **Returns**: `void`
+- **Usage**: Called via wp_enqueue_scripts hook
+
+##### `ajaxScanLibraryUsage()`
+- **Purpose**: AJAX handler for scanning library usage
+- **Input**: `$_POST['nonce']`, `$_POST['library_id']`
+- **Returns**: JSON response
+- **Usage**: Called via AJAX request
+
+##### `ajaxGetFoldersOrderManager()`
+- **Purpose**: AJAX handler for getting folders in order manager
+- **Input**: `$_POST['nonce']`
+- **Returns**: JSON response
+- **Usage**: Called via AJAX request
+
+##### `ajaxGetDocumentsForOrdering()`
+- **Purpose**: AJAX handler for getting documents for ordering
+- **Input**: `$_POST['nonce']`, `$_POST['folder_id']`
+- **Returns**: JSON response
+- **Usage**: Called via AJAX request
+
+##### `ajaxUpdateDocumentOrder()`
+- **Purpose**: AJAX handler for updating document order
+- **Input**: `$_POST['nonce']`, `$_POST['folder_id']`, `$_POST['document_order']`
+- **Returns**: JSON response
+- **Usage**: Called via AJAX request
+
+### 8. FileBird_FD_Logger Class
+**File**: `includes/class-logger.php`
+
+#### Methods
+
+##### `getInstance()`
+- **Purpose**: Get singleton instance
+- **Returns**: `FileBird_FD_Logger` instance
+- **Usage**: `FileBird_FD_Logger::getInstance()`
+
+##### `log($message, $level = 'INFO', $context = array())`
+- **Purpose**: Log a message
+- **Input**: `string $message`, `string $level`, `array $context`
+- **Returns**: `void`
+- **Usage**: Called by other classes for logging
+
+##### `info($message, $context = array())`
+- **Purpose**: Log info message
+- **Input**: `string $message`, `array $context`
+- **Returns**: `void`
+- **Usage**: Called for informational logging
+
+##### `warning($message, $context = array())`
+- **Purpose**: Log warning message
+- **Input**: `string $message`, `array $context`
+- **Returns**: `void`
+- **Usage**: Called for warning logging
+
+##### `error($message, $context = array())`
+- **Purpose**: Log error message
+- **Input**: `string $message`, `array $context`
+- **Returns**: `void`
+- **Usage**: Called for error logging
+
+##### `debug($message, $context = array())`
+- **Purpose**: Log debug message
+- **Input**: `string $message`, `array $context`
+- **Returns**: `void`
+- **Usage**: Called for debug logging
+
+##### `exception($exception, $context = array())`
+- **Purpose**: Log exception
+- **Input**: `Exception $exception`, `array $context`
+- **Returns**: `void`
+- **Usage**: Called for exception logging
+
+##### `getLogContents($lines = 100)`
+- **Purpose**: Get log file contents
+- **Input**: `int $lines`
+- **Returns**: `string` (log contents)
+- **Usage**: Called by admin interface
+
+##### `clearLog()`
+- **Purpose**: Clear log file
+- **Returns**: `boolean` (success status)
+- **Usage**: Called by admin interface
+
+##### `getLogFileSize()`
+- **Purpose**: Get log file size
+- **Returns**: `int` (file size in bytes)
+- **Usage**: Called by admin interface
+
+## JavaScript Classes and Functions
+
+### FileBirdFDOrder.OrderManager (order-manager.js)
+
+#### Methods
+
+##### `init()`
+- **Purpose**: Initialize order manager
+- **Returns**: `void`
+- **Usage**: Called on page load
+
+##### `bindEvents()`
+- **Purpose**: Bind event handlers
+- **Returns**: `void`
+- **Usage**: Called by init()
+
+##### `loadFolders()`
+- **Purpose**: Load folder tree via AJAX
+- **Returns**: `void`
+- **Usage**: Called by init()
+
+##### `renderFolderTree(folders)`
+- **Purpose**: Render folder tree HTML
+- **Input**: `array $folders`
+- **Returns**: `void`
+- **Usage**: Called by loadFolders()
+
+##### `selectFolder($folderElement)`
+- **Purpose**: Handle folder selection
+- **Input**: `jQuery $folderElement`
+- **Returns**: `void`
+- **Usage**: Called by folder click events
+
+##### `loadDocuments(folderId)`
+- **Purpose**: Load documents for selected folder
+- **Input**: `int $folderId`
+- **Returns**: `void`
+- **Usage**: Called by selectFolder()
+
+##### `renderDocuments(documents)`
+- **Purpose**: Render documents list
+- **Input**: `array $documents`
+- **Returns**: `void`
+- **Usage**: Called by loadDocuments()
+
+##### `saveOrder()`
+- **Purpose**: Save document order via AJAX
+- **Returns**: `void`
+- **Usage**: Called by save button click
+
+##### `resetOrder()`
+- **Purpose**: Reset document order to original
+- **Returns**: `void`
+- **Usage**: Called by reset button click
+
+##### `previewOrder()`
+- **Purpose**: Preview current document order
+- **Returns**: `void`
+- **Usage**: Called by preview button click
+
+## Data Structures and Formats
+
+### Folder Object Structure
 ```php
-[filebird_docs folder="123"]
+object {
+    id: int,
+    name: string,
+    parent: int,
+    children: array
+}
 ```
 
-### Document Library Usage
+### Attachment Object Structure
 ```php
-[render_document_library id="123"]
+object {
+    ID: int,
+    post_title: string,
+    post_date: string,
+    menu_order: int,
+    file_url: string,
+    file_path: string,
+    file_type: string,
+    file_size: string,
+    thumbnail_url: string,
+    medium_url: string
+}
 ```
 
-### Available Attributes
-- `folder` (required): FileBird folder ID
-- `layout`: grid, list, or table (default: grid)
-- `columns`: Number of columns for grid layout (default: 3)
-- `orderby`: date, title, menu_order, ID (default: date)
-- `order`: ASC or DESC (default: DESC)
-- `limit`: Number of documents to display (default: -1 for all)
-- `show_title`: true or false (default: true)
-- `show_size`: true or false (default: false)
-- `show_date`: true or false (default: false)
-- `show_thumbnail`: true or false (default: true)
-- `class`: Additional CSS classes
-- `include_subfolders`: true or false (default: false)
-- `group_by_folder`: true or false (default: false)
-- `accordion_states`: Base64-encoded JSON string of folder states (e.g., `{"456":"open","789":"closed"}`)
-- `exclude_folders`: Comma-separated folder IDs to exclude
-
-### Advanced Examples
+### Shortcode Attributes
 ```php
-# Include subfolders with grouping
-[filebird_docs folder="123" include_subfolders="true" group_by_folder="true"]
-
-# Table layout with all information
-[filebird_docs folder="123" layout="table" show_size="true" show_date="true"]
-
-# Exclude specific subfolders
-[filebird_docs folder="123" include_subfolders="true" exclude_folders="456,789"]
-
-# Granular accordion control (Base64 encoded)
-[filebird_docs folder="123" include_subfolders="true" group_by_folder="true" accordion_states="eyI0NTYiOiJvcGVuIiwiNzg5IjoiY2xvc2VkIn0="]
-
-# Render a document library
-[render_document_library id="123"]
+array {
+    'folder' => string,
+    'orderby' => string,
+    'order' => string,
+    'limit' => int,
+    'layout' => string,
+    'show_title' => boolean,
+    'show_size' => boolean,
+    'show_date' => boolean,
+    'show_thumbnail' => boolean,
+    'columns' => int,
+    'class' => string,
+    'include_subfolders' => boolean,
+    'group_by_folder' => boolean,
+    'accordion_states' => string,
+    'exclude_folders' => string
+}
 ```
 
-## Document Library Custom Post Type
+### AJAX Response Format
+```php
+array {
+    'success' => boolean,
+    'data' => mixed,
+    'message' => string (optional)
+}
+```
 
-### Features
-- **Centralized Management**: Create and configure document displays through WordPress admin
-- **Integrated Settings**: All shortcode attributes available through admin interface
-- **Frontend Editor Buttons**: Administrators can edit libraries directly from frontend
-- **Document Order Manager**: Drag-and-drop reordering when using "Menu Order"
-- **Usage Tracking**: See where each library is used across the site
-- **Cohesive Styling**: Integrated edit buttons with document display
+## Error Handling and Logging
 
-### Admin Interface
-- **Folder Selection**: Tree-based folder selector with search and expand/collapse
-- **Layout Configuration**: Grid, List, and Table options with column settings
-- **Display Options**: Toggle title, size, date, and thumbnail display
-- **Subfolder Management**: Include/exclude subfolders with granular control
-- **Accordion States**: Fine-grained control over which folders are open/closed
-- **Document Ordering**: Drag-and-drop reordering for menu order displays
+### Logger Usage Patterns
+```php
+$logger = FileBird_FD_Logger::getInstance();
+
+// Log different levels
+$logger->info('Operation completed successfully');
+$logger->warning('Potential issue detected');
+$logger->error('Operation failed', array('context' => 'additional info'));
+$logger->debug('Debug information');
+$logger->exception($exception, array('context' => 'error context'));
+```
+
+### Common Error Scenarios
+1. **FileBird not available**: Check with `FileBird_FD_Helper::isFileBirdAvailable()`
+2. **Invalid folder ID**: Validate with `FileBird_FD_Helper::folderExists()`
+3. **Permission issues**: Check with `current_user_can('manage_options')`
+4. **AJAX nonce failures**: Verify with `wp_verify_nonce()`
+
+## Integration Points
+
+### FileBird Plugin Integration
+- **Folder access**: `FileBird\Model\Folder::allFolders()`
+- **Attachment queries**: `FileBird\Classes\Helpers::getAttachmentIdsByFolderId()`
+- **Folder validation**: `FileBird\Model\Folder::findById()`
+
+### WordPress Integration
+- **Shortcode registration**: `add_shortcode()`
+- **AJAX handlers**: `add_action('wp_ajax_*')`
+- **Admin menus**: `add_submenu_page()`
+- **Meta boxes**: `add_meta_box()`
+- **Custom post types**: `register_post_type()`
 
 ### Frontend Integration
-- **Editor Buttons**: Blue gradient header with "Edit Library" button for administrators
-- **Cohesive Design**: Edit button integrated with document display container
-- **State Preservation**: Accordion states maintained when parent folders are closed/reopened
+- **Script enqueuing**: `wp_enqueue_script()`
+- **Style enqueuing**: `wp_enqueue_style()`
+- **Localization**: `wp_localize_script()`
+- **Nonce creation**: `wp_create_nonce()`
 
-## Accordion State Management
+## Performance Considerations
 
-### Technical Implementation
-- **Base64 Encoding**: Complex JSON data encoded to prevent shortcode parsing issues
-- **State Preservation**: Nested accordion states maintained when parent folders are closed
-- **Frontend JavaScript**: Enhanced to preserve accordion states during parent folder operations
-- **Admin Interface**: Fine-grained control over individual folder accordion states
+### Caching Strategies
+- **Folder tree caching**: Implemented in `FileBird_FD_Helper::getFolderTree()`
+- **Attachment metadata**: Cached in `getAttachmentsByFolderId()`
+- **Database queries**: Optimized with proper indexing
 
-### User Experience
-- **Granular Control**: Set each folder to open or closed independently
-- **State Persistence**: Accordion states preserved during navigation
-- **Intuitive Behavior**: Closing parent folders doesn't reset nested accordion states
-- **Visual Feedback**: Clear indication of which folders are open/closed
+### Memory Management
+- **Large folder handling**: Implemented pagination and limits
+- **Recursive operations**: Controlled depth and memory usage
+- **File size handling**: Efficient file size calculation
 
-## Recent Updates
+## Security Measures
 
-### Document Library CPT Integration
-- Complete integration of document order manager into Document Library settings
-- Enhanced folder selector with automatic expansion and state restoration
-- Improved accordion state controls with parent folder inclusion
-- Base64 encoding for complex accordion state data in shortcodes
+### Input Validation
+- **Nonce verification**: All AJAX requests
+- **Permission checks**: User capability validation
+- **Data sanitization**: `sanitize_text_field()`, `intval()`, etc.
+- **File upload validation**: Type and size restrictions
 
-### Frontend Improvements
-- Fixed accordion state preservation when closing parent folders
-- Enhanced frontend JavaScript to maintain nested accordion states
-- Improved user experience with intuitive accordion behavior
+### Output Escaping
+- **HTML escaping**: `esc_html()`, `esc_attr()`
+- **URL escaping**: `esc_url()`
+- **CSS class sanitization**: `sanitize_html_class()`
 
-### Admin Interface Enhancements
-- Automatic folder tree expansion on page load
-- State restoration for existing libraries
-- Improved subfolder and accordion state controls
-- Enhanced document order manager integration
+## Development Guidelines
 
-### Code Quality
-- Removed all debugging statements and console logs
-- Cleaned up temporary test files
-- Improved error handling and user feedback
-- Enhanced documentation and user guides
+### Adding New Features
+1. **Create new class file** in `includes/` directory
+2. **Register in main plugin file** via `loadDependencies()`
+3. **Initialize in `initComponents()`** if needed
+4. **Add hooks in constructor** or `registerHooks()`
+5. **Update documentation** in PROJECT_CONTEXT.md
+
+### AJAX Handler Pattern
+```php
+public function ajaxHandler() {
+    // 1. Verify nonce
+    if (!wp_verify_nonce($_POST['nonce'], 'nonce_name')) {
+        wp_die('Security check failed.');
+    }
+    
+    // 2. Check permissions
+    if (!current_user_can('required_capability')) {
+        wp_die('Insufficient permissions.');
+    }
+    
+    // 3. Validate input
+    $input = sanitize_text_field($_POST['input']);
+    
+    // 4. Process request
+    $result = $this->processRequest($input);
+    
+    // 5. Return response
+    if ($result) {
+        wp_send_json_success($result);
+    } else {
+        wp_send_json_error('Error message');
+    }
+}
+```
+
+### Template Rendering Pattern
+```php
+public static function renderTemplate($data) {
+    // 1. Extract variables
+    extract($data);
+    
+    // 2. Start output buffering
+    ob_start();
+    
+    // 3. Include template file
+    include FB_FD_PLUGIN_PATH . 'templates/template-name.php';
+    
+    // 4. Return buffered content
+    return ob_get_clean();
+}
+```
+
+This comprehensive documentation provides a complete reference for understanding the plugin's architecture, methods, data structures, and usage patterns. It should help resolve the issues you're experiencing with the document reordering feature enhancement.

@@ -47,6 +47,12 @@
                 });
             }
 
+            // Prevent text selection on document items during drag
+            $(document).on('selectstart', '.filebird-fd-document-item', function(e) {
+                e.preventDefault();
+                return false;
+            });
+
             // Order control events
             $('#save-order').on('click', function() {
                 FileBirdFDOrder.OrderManager.saveOrder();
@@ -222,39 +228,50 @@
             
             // Get all selected folders from the document library settings
             var selectedFolders = $('#document_library_folders').val();
+            
             if (!selectedFolders) {
                 $documentList.html('<div class="empty">No folders selected. Please select folders in the document library settings above.</div>');
                 return;
             }
             
+            // Get subfolder settings from the document library
+            var $includeSubfoldersCheckbox = $('#document_library_include_subfolders');
+            
+            var includeSubfolders = $includeSubfoldersCheckbox.is(':checked');
+            var excludeFolders = $('#document_library_exclude_folders').val() || '';
+            
             // Show loading state
             $documentList.html('<div class="loading"><span class="spinner is-active"></span>Loading documents from selected folders...</div>');
             
-            // For now, we'll load documents from the first selected folder
-            // In the future, we could enhance this to load from multiple folders
-            var folderIds = selectedFolders.split(',').filter(function(id) { return id.trim() !== ''; });
-            var firstFolderId = folderIds[0];
+            // Load documents from all selected folders
+            var ajaxData = {
+                action: 'filebird_fd_get_documents_for_ordering',
+                folder_ids: selectedFolders,
+                include_subfolders: includeSubfolders,
+                exclude_folders: excludeFolders,
+                nonce: filebird_fd_order.nonce
+            };
             
             $.ajax({
                 url: filebird_fd_order.ajax_url,
                 type: 'POST',
-                data: {
-                    action: 'filebird_fd_get_documents_for_ordering',
-                    folder_id: firstFolderId,
-                    nonce: filebird_fd_order.nonce
-                },
+                data: ajaxData,
                 success: function(response) {
                     if (response.success) {
-                        FileBirdFDOrder.OrderManager.documents = response.data;
-                        FileBirdFDOrder.OrderManager.originalOrder = response.data.map(function(doc) { return doc.id; });
-                        FileBirdFDOrder.OrderManager.renderDocuments(response.data);
+                        FileBirdFDOrder.OrderManager.documents = response.data.documents;
+                        FileBirdFDOrder.OrderManager.originalOrder = response.data.documents.map(function(doc) { return doc.id; });
+                        FileBirdFDOrder.OrderManager.folderInfo = response.data.folder_info;
+                        FileBirdFDOrder.OrderManager.renderDocuments(response.data.documents);
+                        FileBirdFDOrder.OrderManager.renderFolderSummary(response.data);
                         FileBirdFDOrder.OrderManager.initializeSortable();
                     } else {
+                        console.error('AJAX error response:', response);
                         FileBirdFDOrder.OrderManager.showError('Failed to load documents.');
                     }
                 },
                 error: function(xhr, status, error) {
-                    console.error('Error loading documents:', error);
+                    console.error('AJAX error:', {xhr: xhr, status: status, error: error});
+                    console.error('Response text:', xhr.responseText);
                     FileBirdFDOrder.OrderManager.showError('Error loading documents. Please try again.');
                 }
             });
@@ -268,23 +285,63 @@
                 return;
             }
             
+            // Group documents by source folder
+            var groupedDocuments = {};
+            documents.forEach(function(doc) {
+                var folderName = doc.source_folder_name || 'Unknown Folder';
+                if (!groupedDocuments[folderName]) {
+                    groupedDocuments[folderName] = [];
+                }
+                groupedDocuments[folderName].push(doc);
+            });
+            
             var html = '';
-            documents.forEach(function(doc, index) {
-                html += this.buildDocumentItemHtml(doc, index + 1);
-            }.bind(this));
+            var globalOrder = 1;
+            var self = this; // Store reference to 'this'
+            
+            // Render each folder group
+            Object.keys(groupedDocuments).forEach(function(folderName) {
+                var folderDocs = groupedDocuments[folderName];
+                
+                // Add folder header
+                html += '<div class="filebird-fd-folder-group">';
+                html += '<div class="filebird-fd-folder-header">';
+                html += '<h4 class="filebird-fd-folder-title">' + self.escapeHtml(folderName) + '</h4>';
+                html += '<span class="filebird-fd-folder-count">' + folderDocs.length + ' document(s)</span>';
+                html += '</div>';
+                html += '<div class="filebird-fd-folder-documents">';
+                
+                // Render documents in this folder with fresh ordering (1, 2, 3...)
+                folderDocs.forEach(function(doc, index) {
+                    html += self.buildDocumentItemHtml(doc, index + 1); // Start fresh at 1 for each folder
+                });
+                
+                html += '</div>'; // Close folder-documents
+                html += '</div>'; // Close folder-group
+            });
             
             $documentList.html(html);
+            
+            // Initialize sortable after DOM is updated (removed setTimeout to prevent double initialization)
+            self.initializeSortable();
         },
 
         buildDocumentItemHtml: function(doc, order) {
             var fileIcon = this.getFileIcon(doc.file_type);
             var thumbnail = doc.thumbnail ? '<img src="' + doc.thumbnail + '" alt="' + doc.title + '">' : '<div class="file-icon ' + fileIcon + '"></div>';
             
+            // Add folder indicator if document has source folder info
+            var folderIndicator = '';
+            if (doc.source_folder_name) {
+                folderIndicator = '<div class="filebird-fd-document-folder">' + this.escapeHtml(doc.source_folder_name) + '</div>';
+            }
+            
             return '<div class="filebird-fd-document-item" data-document-id="' + doc.id + '">' +
                 '<div class="filebird-fd-document-drag-handle" tabindex="0"></div>' +
                 '<div class="filebird-fd-document-thumbnail">' + thumbnail + '</div>' +
                 '<div class="filebird-fd-document-info">' +
                     '<div class="filebird-fd-document-title">' + this.escapeHtml(doc.title) + '</div>' +
+                    folderIndicator +
                     '<div class="filebird-fd-document-meta">' +
                         '<span class="filebird-fd-document-filename">' + this.escapeHtml(doc.filename) + '</span>' +
                         '<span class="filebird-fd-document-size">' + doc.file_size + '</span>' +
@@ -310,20 +367,35 @@
         initializeSortable: function() {
             var self = this;
             
-            $('#document-list').sortable({
-                handle: '.filebird-fd-document-drag-handle',
-                placeholder: 'filebird-fd-document-item ui-sortable-placeholder',
-                helper: function(e, item) {
-                    return item.clone().addClass('ui-sortable-helper');
-                },
-                start: function(e, ui) {
-                    ui.item.addClass('dragging');
-                },
-                stop: function(e, ui) {
-                    ui.item.removeClass('dragging');
-                    self.updateOrderNumbers();
-                    self.markAsDirty();
-                }
+            // Destroy any existing sortable on document-list
+            if ($('#document-list').sortable('instance')) {
+                $('#document-list').sortable('destroy');
+            }
+            
+            // Initialize sortables for each folder group's documents
+            $('.filebird-fd-folder-documents').each(function(index) {
+                var $folderDocuments = $(this);
+                var folderName = $folderDocuments.closest('.filebird-fd-folder-group').find('.filebird-fd-folder-title').text();
+                
+                // Initialize sortable for this folder's documents
+                $folderDocuments.sortable({
+                    handle: '.filebird-fd-document-drag-handle',
+                    items: '.filebird-fd-document-item',
+                    placeholder: 'filebird-fd-document-item ui-sortable-placeholder',
+                    helper: function(e, item) {
+                        return item.clone().addClass('ui-sortable-helper');
+                    },
+                    start: function(e, ui) {
+                        ui.item.addClass('dragging');
+                    },
+                    stop: function(e, ui) {
+                        ui.item.removeClass('dragging');
+                        self.updateOrderNumbers();
+                        self.markAsDirty();
+                    },
+                    // Prevent dragging on folder headers
+                    cancel: '.filebird-fd-folder-header'
+                });
             });
         },
 
@@ -466,6 +538,41 @@
         collapseAllFolders: function() {
             $('.filebird-fd-folder-children').hide();
             $('.filebird-fd-folder-toggle .dashicons').removeClass('dashicons-arrow-down-alt2').addClass('dashicons-arrow-right-alt2');
+        },
+
+        renderFolderSummary: function(data) {
+            var $summaryContainer = $('#folder-summary');
+            if ($summaryContainer.length === 0) {
+                // Create summary container if it doesn't exist
+                $('#document-order-section').prepend('<div id="folder-summary" class="filebird-fd-folder-summary"></div>');
+                $summaryContainer = $('#folder-summary');
+            }
+            
+            var html = '<div class="filebird-fd-summary-header">';
+            html += '<h3>Document Order Summary</h3>';
+            html += '<div class="filebird-fd-summary-stats">';
+            html += '<span class="filebird-fd-stat">' + data.total_folders + ' folder(s)</span>';
+            html += '<span class="filebird-fd-stat">' + data.total_documents + ' document(s)</span>';
+            html += '</div>';
+            html += '</div>';
+            
+            if (data.folder_info && Object.keys(data.folder_info).length > 0) {
+                html += '<div class="filebird-fd-folder-breakdown">';
+                html += '<h4>Folders Included:</h4>';
+                html += '<ul class="filebird-fd-folder-list">';
+                
+                Object.values(data.folder_info).forEach(function(folder) {
+                    html += '<li class="filebird-fd-folder-item-summary">';
+                    html += '<span class="filebird-fd-folder-name">' + this.escapeHtml(folder.name) + '</span>';
+                    html += '<span class="filebird-fd-folder-count">' + folder.count + ' document(s)</span>';
+                    html += '</li>';
+                }.bind(this));
+                
+                html += '</ul>';
+                html += '</div>';
+            }
+            
+            $summaryContainer.html(html);
         }
     };
 

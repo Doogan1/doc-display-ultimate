@@ -336,7 +336,7 @@ class FileBird_FD_Document_Library_CPT {
                 <th scope="row"><?php _e('Subfolder Options', 'filebird-frontend-docs'); ?></th>
                 <td>
                     <label>
-                        <input type="checkbox" name="document_library_include_subfolders" value="true" <?php checked($include_subfolders); ?> />
+                        <input type="checkbox" id="document_library_include_subfolders" name="document_library_include_subfolders" value="true" <?php checked($include_subfolders); ?> />
                         <?php _e('Include Subfolders', 'filebird-frontend-docs'); ?>
                     </label><br>
                     
@@ -1026,22 +1026,143 @@ class FileBird_FD_Document_Library_CPT {
      * AJAX handler for getting documents for ordering
      */
     public function ajaxGetDocumentsForOrdering() {
-        // Verify nonce and permissions
-        if (!wp_verify_nonce($_POST['nonce'], 'filebird_fd_order_nonce') || 
-            !current_user_can('manage_options')) {
-            wp_die(__('Security check failed.', 'filebird-frontend-docs'));
+        try {
+            // Verify nonce and permissions
+            if (!wp_verify_nonce($_POST['nonce'], 'filebird_fd_order_nonce') || 
+                !current_user_can('manage_options')) {
+                wp_die(__('Security check failed.', 'filebird-frontend-docs'));
+            }
+            
+            // Get folder IDs - can be single folder or comma-separated list
+            $folder_ids_input = sanitize_text_field($_POST['folder_ids']);
+            $include_subfolders = filter_var($_POST['include_subfolders'] ?? false, FILTER_VALIDATE_BOOLEAN);
+            $exclude_folders = array();
+            
+            // Parse exclude folders if provided
+            if (!empty($_POST['exclude_folders'])) {
+                $exclude_folders = array_map('intval', explode(',', sanitize_text_field($_POST['exclude_folders'])));
+            }
+            
+            if (empty($folder_ids_input)) {
+                wp_send_json_error(__('No folders specified.', 'filebird-frontend-docs'));
+            }
+            
+            // Parse folder IDs
+            $folder_ids = array_map('intval', explode(',', $folder_ids_input));
+            $folder_ids = array_filter($folder_ids); // Remove empty values
+            
+            if (empty($folder_ids)) {
+                wp_send_json_error(__('Invalid folder IDs provided.', 'filebird-frontend-docs'));
+            }
+            
+            // Get documents from all specified folders
+            $all_documents = array();
+            $folder_info = array();
+            
+            foreach ($folder_ids as $folder_id) {
+                if (!FileBird_FD_Helper::folderExists($folder_id)) {
+                    continue; // Skip non-existent folders
+                }
+                
+                // Get folder name for parent folder
+                $parent_folder_object = FileBird_FD_Helper::getFolderById($folder_id);
+                $parent_folder_name = ($parent_folder_object && isset($parent_folder_object->name)) ? $parent_folder_object->name : 'Unknown Folder (ID: ' . $folder_id . ')';
+                
+                // Get all subfolder IDs recursively
+                $all_subfolder_ids = FileBird_FD_Helper::getSubfolderIds($folder_id);
+                
+                // Filter out excluded subfolders
+                $included_subfolder_ids = $all_subfolder_ids;
+                if (!empty($exclude_folders)) {
+                    // First, get all subfolders of excluded folders
+                    $excluded_subfolders = array();
+                    foreach ($exclude_folders as $excluded_folder_id) {
+                        $excluded_subfolders = array_merge($excluded_subfolders, FileBird_FD_Helper::getSubfolderIds($excluded_folder_id));
+                    }
+                    
+                    // Combine original excluded folders with their subfolders
+                    $all_excluded_folders = array_merge($exclude_folders, $excluded_subfolders);
+                    
+                    // Filter out all excluded folders and their subfolders
+                    $included_subfolder_ids = array_diff($all_subfolder_ids, $all_excluded_folders);
+                }
+                
+                // Create list of all folders to process (parent + included subfolders)
+                $folders_to_process = array($folder_id);
+                if ($include_subfolders) {
+                    $folders_to_process = array_merge($folders_to_process, $included_subfolder_ids);
+                }
+                
+                // Get documents from each folder individually
+                foreach ($folders_to_process as $current_folder_id) {
+                    // Get documents from this specific folder (not recursively)
+                    $documents = FileBird_FD_Helper::getAttachmentsByFolderId($current_folder_id, array(
+                        'orderby' => 'menu_order',
+                        'order' => 'ASC',
+                        'limit' => -1,
+                        'include_metadata' => true
+                    ));
+                    
+                    // Get folder name for this specific folder
+                    $current_folder_object = FileBird_FD_Helper::getFolderById($current_folder_id);
+                    $current_folder_name = ($current_folder_object && isset($current_folder_object->name)) ? $current_folder_object->name : 'Unknown Folder (ID: ' . $current_folder_id . ')';
+                    
+                    // Add folder information to each document
+                    foreach ($documents as $doc) {
+                        $doc->source_folder_id = $current_folder_id;
+                        $doc->source_folder_name = $current_folder_name;
+                        $all_documents[] = $doc;
+                    }
+                    
+                    // Store folder info for display
+                    $folder_info[$current_folder_id] = array(
+                        'id' => $current_folder_id,
+                        'name' => $current_folder_name,
+                        'count' => count($documents)
+                    );
+                }
+            }
+            
+            // Sort all documents by menu_order across all folders
+            usort($all_documents, function($a, $b) {
+                return $a->menu_order - $b->menu_order;
+            });
+            
+            // Format documents for frontend
+            $formatted_documents = array();
+            foreach ($all_documents as $doc) {
+                $formatted_documents[] = array(
+                    'id' => $doc->ID,
+                    'title' => $doc->post_title,
+                    'filename' => basename($doc->file_path),
+                    'file_type' => $doc->file_type,
+                    'file_size' => $doc->file_size,
+                    'menu_order' => $doc->menu_order,
+                    'thumbnail' => $doc->thumbnail_url,
+                    'url' => $doc->file_url,
+                    'source_folder_id' => $doc->source_folder_id,
+                    'source_folder_name' => $doc->source_folder_name
+                );
+            }
+            
+            $response_data = array(
+                'documents' => $formatted_documents,
+                'folder_info' => $folder_info,
+                'total_folders' => count($folder_info),
+                'total_documents' => count($formatted_documents)
+            );
+            
+            wp_send_json_success($response_data);
+            
+        } catch (Exception $e) {
+            error_log('FileBird FD Error - Document Library CPT ajaxGetDocumentsForOrdering exception: ' . $e->getMessage());
+            error_log('FileBird FD Error - Stack trace: ' . $e->getTraceAsString());
+            wp_send_json_error('Server error: ' . $e->getMessage());
+        } catch (Error $e) {
+            error_log('FileBird FD Error - Document Library CPT ajaxGetDocumentsForOrdering fatal error: ' . $e->getMessage());
+            error_log('FileBird FD Error - Stack trace: ' . $e->getTraceAsString());
+            wp_send_json_error('Server error: ' . $e->getMessage());
         }
-        
-        $folder_id = intval($_POST['folder_id']);
-        
-        if (!$folder_id) {
-            wp_send_json_error(__('Invalid folder ID.', 'filebird-frontend-docs'));
-        }
-        
-        // Get documents with current order
-        $documents = $this->getDocumentsWithOrder($folder_id);
-        
-        wp_send_json_success($documents);
     }
     
     /**
@@ -1054,18 +1175,17 @@ class FileBird_FD_Document_Library_CPT {
             wp_die(__('Security check failed.', 'filebird-frontend-docs'));
         }
         
-        $folder_id = intval($_POST['folder_id']);
         $document_order = $_POST['document_order'];
         
-        if (!$folder_id || !is_array($document_order)) {
+        if (!is_array($document_order)) {
             wp_send_json_error(__('Invalid data provided.', 'filebird-frontend-docs'));
         }
         
-        // Update the order
-        $result = $this->updateDocumentOrder($folder_id, $document_order);
+        // Update the order across all folders
+        $result = $this->updateDocumentOrderMultiFolder($document_order);
         
         if ($result) {
-            wp_send_json_success(__('Order updated successfully.', 'filebird-frontend-docs'));
+            wp_send_json_success(__('Order updated successfully across all folders.', 'filebird-frontend-docs'));
         } else {
             wp_send_json_error(__('Error updating order.', 'filebird-frontend-docs'));
         }
@@ -1137,6 +1257,46 @@ class FileBird_FD_Document_Library_CPT {
             // Rollback transaction
             $wpdb->query('ROLLBACK');
             error_log('FileBird FD: Error updating document order - ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Update document order across multiple folders
+     */
+    private function updateDocumentOrderMultiFolder($document_order) {
+        global $wpdb;
+        
+        try {
+            // Start transaction
+            $wpdb->query('START TRANSACTION');
+            
+            // Update menu_order for all documents in the combined order
+            foreach ($document_order as $index => $document_id) {
+                $document_id = intval($document_id);
+                $menu_order = intval($index) + 1;
+                
+                $result = $wpdb->update(
+                    $wpdb->posts,
+                    array('menu_order' => $menu_order),
+                    array('ID' => $document_id, 'post_type' => 'attachment'),
+                    array('%d'),
+                    array('%d', '%s')
+                );
+                
+                if ($result === false) {
+                    throw new Exception('Failed to update document order for document ID: ' . $document_id);
+                }
+            }
+            
+            // Commit transaction
+            $wpdb->query('COMMIT');
+            return true;
+            
+        } catch (Exception $e) {
+            // Rollback transaction
+            $wpdb->query('ROLLBACK');
+            error_log('FileBird FD: Error updating document order across multiple folders - ' . $e->getMessage());
             return false;
         }
     }
