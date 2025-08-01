@@ -228,7 +228,6 @@
             
             // Get all selected folders from the document library settings
             var selectedFolders = $('#document_library_folders').val();
-            console.log('Selected folders:', selectedFolders);
             
             if (!selectedFolders) {
                 $documentList.html('<div class="empty">No folders selected. Please select folders in the document library settings above.</div>');
@@ -237,15 +236,9 @@
             
             // Get subfolder settings from the document library
             var $includeSubfoldersCheckbox = $('#document_library_include_subfolders');
-            console.log('Include subfolders checkbox element:', $includeSubfoldersCheckbox);
-            console.log('Include subfolders checkbox length:', $includeSubfoldersCheckbox.length);
-            console.log('Include subfolders checkbox checked:', $includeSubfoldersCheckbox.is(':checked'));
-            console.log('Include subfolders checkbox prop checked:', $includeSubfoldersCheckbox.prop('checked'));
             
             var includeSubfolders = $includeSubfoldersCheckbox.is(':checked');
             var excludeFolders = $('#document_library_exclude_folders').val() || '';
-            console.log('Include subfolders:', includeSubfolders);
-            console.log('Exclude folders:', excludeFolders);
             
             // Show loading state
             $documentList.html('<div class="loading"><span class="spinner is-active"></span>Loading documents from selected folders...</div>');
@@ -258,20 +251,13 @@
                 exclude_folders: excludeFolders,
                 nonce: filebird_fd_order.nonce
             };
-            console.log('AJAX request data:', ajaxData);
             
             $.ajax({
                 url: filebird_fd_order.ajax_url,
                 type: 'POST',
                 data: ajaxData,
                 success: function(response) {
-                    console.log('AJAX response:', response);
                     if (response.success) {
-                        console.log('Documents loaded:', response.data.documents);
-                        console.log('Folder info:', response.data.folder_info);
-                        console.log('Total folders:', response.data.total_folders);
-                        console.log('Total documents:', response.data.total_documents);
-                        
                         FileBirdFDOrder.OrderManager.documents = response.data.documents;
                         FileBirdFDOrder.OrderManager.originalOrder = response.data.documents.map(function(doc) { return doc.id; });
                         FileBirdFDOrder.OrderManager.folderInfo = response.data.folder_info;
@@ -381,21 +367,8 @@
         initializeSortable: function() {
             var self = this;
             
-            console.log('=== SORTABLE DEBUGGING ===');
-            console.log('Initializing sortables for individual folder groups...');
-            
-            // Check for existing sortable instances
-            console.log('=== CHECKING FOR EXISTING SORTABLE INSTANCES ===');
-            $('.ui-sortable').each(function(index) {
-                console.log('Found sortable instance ' + index + ':', this);
-                console.log('Element:', this);
-                console.log('Classes:', this.className);
-                console.log('Has sortable instance:', $(this).sortable('instance'));
-            });
-            
             // Destroy any existing sortable on document-list
             if ($('#document-list').sortable('instance')) {
-                console.log('Destroying existing sortable on document-list...');
                 $('#document-list').sortable('destroy');
             }
             
@@ -404,56 +377,25 @@
                 var $folderDocuments = $(this);
                 var folderName = $folderDocuments.closest('.filebird-fd-folder-group').find('.filebird-fd-folder-title').text();
                 
-                console.log('Initializing sortable for folder:', folderName);
-                console.log('Document items in this folder:', $folderDocuments.find('.filebird-fd-document-item').length);
-                
                 // Initialize sortable for this folder's documents
                 $folderDocuments.sortable({
                     handle: '.filebird-fd-document-drag-handle',
                     items: '.filebird-fd-document-item',
                     placeholder: 'filebird-fd-document-item ui-sortable-placeholder',
                     helper: function(e, item) {
-                        console.log('Helper function called for folder:', folderName);
                         return item.clone().addClass('ui-sortable-helper');
                     },
                     start: function(e, ui) {
                         ui.item.addClass('dragging');
-                        console.log('Drag started on item in folder:', folderName);
                     },
                     stop: function(e, ui) {
                         ui.item.removeClass('dragging');
                         self.updateOrderNumbers();
                         self.markAsDirty();
-                        console.log('Drag stopped, order updated for folder:', folderName);
                     },
                     // Prevent dragging on folder headers
                     cancel: '.filebird-fd-folder-header'
                 });
-                
-                console.log('Sortable initialized for folder:', folderName);
-            });
-            
-            console.log('All folder sortables initialized');
-            
-            // Test if sortables are working
-            $('.filebird-fd-folder-documents').each(function(index) {
-                if ($(this).sortable('instance')) {
-                    console.log('Sortable instance created successfully for folder documents ' + index);
-                } else {
-                    console.error('Failed to create sortable instance for folder documents ' + index);
-                }
-            });
-            
-            // Final check - what's sortable now?
-            console.log('=== FINAL SORTABLE CHECK ===');
-            $('.ui-sortable').each(function(index) {
-                console.log('Sortable instance ' + index + ':', this);
-                console.log('Element classes:', this.className);
-            });
-            
-            // Test drag handle functionality
-            $('.filebird-fd-document-drag-handle').on('mousedown', function(e) {
-                console.log('Drag handle mousedown detected');
             });
         },
 

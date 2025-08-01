@@ -106,29 +106,20 @@ class FileBird_FD_Document_Order_Manager {
             $include_subfolders = filter_var($_POST['include_subfolders'] ?? false, FILTER_VALIDATE_BOOLEAN);
             $exclude_folders = array();
             
-            // Debug logging
-            error_log('FileBird FD Debug - ajaxGetDocumentsForOrdering called');
-            error_log('FileBird FD Debug - folder_ids_input: ' . $folder_ids_input);
-            error_log('FileBird FD Debug - include_subfolders: ' . ($include_subfolders ? 'true' : 'false'));
-            
             // Parse exclude folders if provided
             if (!empty($_POST['exclude_folders'])) {
                 $exclude_folders = array_map('intval', explode(',', sanitize_text_field($_POST['exclude_folders'])));
             }
-            error_log('FileBird FD Debug - exclude_folders: ' . print_r($exclude_folders, true));
             
             if (empty($folder_ids_input)) {
-                error_log('FileBird FD Debug - No folders specified');
                 wp_send_json_error(__('No folders specified.', 'filebird-frontend-docs'));
             }
             
             // Parse folder IDs
             $folder_ids = array_map('intval', explode(',', $folder_ids_input));
             $folder_ids = array_filter($folder_ids); // Remove empty values
-            error_log('FileBird FD Debug - parsed folder_ids: ' . print_r($folder_ids, true));
             
             if (empty($folder_ids)) {
-                error_log('FileBird FD Debug - No valid folder IDs found');
                 wp_send_json_error(__('Invalid folder IDs provided.', 'filebird-frontend-docs'));
             }
             
@@ -137,10 +128,7 @@ class FileBird_FD_Document_Order_Manager {
             $folder_info = array();
             
             foreach ($folder_ids as $folder_id) {
-                error_log('FileBird FD Debug - Processing folder ID: ' . $folder_id);
-                
                 if (!FileBird_FD_Helper::folderExists($folder_id)) {
-                    error_log('FileBird FD Debug - Folder does not exist: ' . $folder_id);
                     continue; // Skip non-existent folders
                 }
                 
@@ -150,7 +138,6 @@ class FileBird_FD_Document_Order_Manager {
                 
                 // Get all subfolder IDs recursively
                 $all_subfolder_ids = FileBird_FD_Helper::getSubfolderIds($folder_id);
-                error_log('FileBird FD Debug - All subfolder IDs for folder ' . $folder_id . ': ' . print_r($all_subfolder_ids, true));
                 
                 // Filter out excluded subfolders
                 $included_subfolder_ids = $all_subfolder_ids;
@@ -166,10 +153,6 @@ class FileBird_FD_Document_Order_Manager {
                     
                     // Filter out all excluded folders and their subfolders
                     $included_subfolder_ids = array_diff($all_subfolder_ids, $all_excluded_folders);
-                    
-                    error_log('FileBird FD Debug - Excluded subfolders: ' . print_r($exclude_folders, true));
-                    error_log('FileBird FD Debug - All excluded folders (including subfolders): ' . print_r($all_excluded_folders, true));
-                    error_log('FileBird FD Debug - Included subfolder IDs after filtering: ' . print_r($included_subfolder_ids, true));
                 }
                 
                 // Create list of all folders to process (parent + included subfolders)
@@ -177,12 +160,9 @@ class FileBird_FD_Document_Order_Manager {
                 if ($include_subfolders) {
                     $folders_to_process = array_merge($folders_to_process, $included_subfolder_ids);
                 }
-                error_log('FileBird FD Debug - Folders to process: ' . print_r($folders_to_process, true));
                 
                 // Get documents from each folder individually
                 foreach ($folders_to_process as $current_folder_id) {
-                    error_log('FileBird FD Debug - Getting documents from folder: ' . $current_folder_id);
-                    
                     // Get documents from this specific folder (not recursively)
                     $documents = FileBird_FD_Helper::getAttachmentsByFolderId($current_folder_id, array(
                         'orderby' => 'menu_order',
@@ -190,8 +170,6 @@ class FileBird_FD_Document_Order_Manager {
                         'limit' => -1,
                         'include_metadata' => true
                     ));
-                    
-                    error_log('FileBird FD Debug - Found ' . count($documents) . ' documents in folder ' . $current_folder_id);
                     
                     // Get folder name for this specific folder
                     $current_folder_object = FileBird_FD_Helper::getFolderById($current_folder_id);
@@ -212,9 +190,6 @@ class FileBird_FD_Document_Order_Manager {
                     );
                 }
             }
-            
-            error_log('FileBird FD Debug - Total documents collected: ' . count($all_documents));
-            error_log('FileBird FD Debug - Folder info: ' . print_r($folder_info, true));
             
             // Sort all documents by menu_order across all folders
             usort($all_documents, function($a, $b) {
@@ -244,8 +219,6 @@ class FileBird_FD_Document_Order_Manager {
                 'total_folders' => count($folder_info),
                 'total_documents' => count($formatted_documents)
             );
-            
-            error_log('FileBird FD Debug - Final response data: ' . print_r($response_data, true));
             
             wp_send_json_success($response_data);
             
