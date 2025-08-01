@@ -42,13 +42,33 @@ class FileBird_FD_Helper {
      */
     public static function getFolderById($folder_id) {
         if (!self::isFileBirdAvailable()) {
+            error_log('FileBird FD Debug - FileBird not available in getFolderById');
             return null;
         }
         
+        error_log('FileBird FD Debug - getFolderById called for folder ID: ' . $folder_id);
+        
         try {
-            return \FileBird\Model\Folder::findById($folder_id);
+            $folder = \FileBird\Model\Folder::findById($folder_id);
+            error_log('FileBird FD Debug - FileBird\Model\Folder::findById returned: ' . print_r($folder, true));
+            
+            // If the folder object doesn't have a name property, try to get it from the folder tree
+            if ($folder && !isset($folder->name)) {
+                $all_folders = self::getAllFolders();
+                foreach ($all_folders as $f) {
+                    if (isset($f->id) && $f->id == $folder_id) {
+                        if (isset($f->name)) {
+                            $folder->name = $f->name;
+                            error_log('FileBird FD Debug - Found folder name from getAllFolders: ' . $f->name);
+                        }
+                        break;
+                    }
+                }
+            }
+            
+            return $folder;
         } catch (Exception $e) {
-            error_log('FileBird Frontend Documents: Error getting folder by ID - ' . $e->getMessage());
+            error_log('FileBird FD Debug - Error getting folder by ID: ' . $e->getMessage());
             return null;
         }
     }
@@ -170,46 +190,37 @@ class FileBird_FD_Helper {
      */
     public static function getSubfolderIds($folder_id) {
         if (!self::isFileBirdAvailable()) {
+            error_log('FileBird FD Debug - FileBird not available in getSubfolderIds');
             return array();
         }
         
+        error_log('FileBird FD Debug - getSubfolderIds called for folder: ' . $folder_id);
+        
         try {
+            $all_folders = self::getAllFolders();
             $subfolder_ids = array();
-            $tree = self::getFolderTree();
             
-            self::findSubfolderIds($tree, $folder_id, $subfolder_ids);
+            error_log('FileBird FD Debug - Total folders available: ' . count($all_folders));
+            
+            // FileBird uses a parent-child relationship, not a children property
+            // We need to find all folders that have the target folder as their parent
+            foreach ($all_folders as $folder) {
+                if (isset($folder->parent) && $folder->parent == $folder_id) {
+                    $subfolder_ids[] = $folder->id;
+                    error_log('FileBird FD Debug - Found direct subfolder: ' . $folder->id);
+                    
+                    // Recursively get subfolders of this subfolder
+                    $nested_subfolders = self::getSubfolderIds($folder->id);
+                    $subfolder_ids = array_merge($subfolder_ids, $nested_subfolders);
+                }
+            }
+            
+            error_log('FileBird FD Debug - Subfolder IDs found: ' . print_r($subfolder_ids, true));
             
             return $subfolder_ids;
         } catch (Exception $e) {
-            error_log('FileBird Frontend Documents: Error getting subfolder IDs - ' . $e->getMessage());
+            error_log('FileBird FD Debug - Error in getSubfolderIds: ' . $e->getMessage());
             return array();
-        }
-    }
-    
-    /**
-     * Find subfolder IDs recursively
-     */
-    private static function findSubfolderIds($folders, $parent_id, &$subfolder_ids) {
-        foreach ($folders as $folder) {
-            if ($folder['id'] == $parent_id) {
-                // Found the parent, now get all children
-                self::collectSubfolderIds($folder, $subfolder_ids);
-                break;
-            } elseif (!empty($folder['children'])) {
-                self::findSubfolderIds($folder['children'], $parent_id, $subfolder_ids);
-            }
-        }
-    }
-    
-    /**
-     * Collect all subfolder IDs recursively
-     */
-    private static function collectSubfolderIds($folder, &$subfolder_ids) {
-        if (!empty($folder['children'])) {
-            foreach ($folder['children'] as $child) {
-                $subfolder_ids[] = $child['id'];
-                self::collectSubfolderIds($child, $subfolder_ids);
-            }
         }
     }
 
@@ -229,31 +240,44 @@ class FileBird_FD_Helper {
         
         $args = wp_parse_args($args, $defaults);
         
+        // Debug logging
+        error_log('FileBird FD Debug - getAttachmentsByFolderIdRecursive called for folder: ' . $folder_id);
+        error_log('FileBird FD Debug - args: ' . print_r($args, true));
+        
         if ($args['include_subfolders']) {
+            error_log('FileBird FD Debug - Including subfolders');
             if ($args['group_by_folder']) {
+                error_log('FileBird FD Debug - Using grouped by folder approach');
                 return self::getAttachmentsGroupedByFolder($folder_id, $args);
             } else {
                 // Get all subfolder IDs including the parent
                 $all_folder_ids = array($folder_id);
                 $subfolder_ids = self::getSubfolderIds($folder_id);
+                error_log('FileBird FD Debug - Subfolder IDs found: ' . print_r($subfolder_ids, true));
                 $all_folder_ids = array_merge($all_folder_ids, $subfolder_ids);
+                error_log('FileBird FD Debug - All folder IDs (including parent): ' . print_r($all_folder_ids, true));
                 
                 // Filter out excluded folders
                 if (!empty($args['exclude_folders'])) {
                     $all_folder_ids = array_diff($all_folder_ids, $args['exclude_folders']);
+                    error_log('FileBird FD Debug - After excluding folders: ' . print_r($all_folder_ids, true));
                 }
                 
                 // Get attachments from all folders
                 $all_attachments = array();
                 foreach ($all_folder_ids as $fid) {
+                    error_log('FileBird FD Debug - Getting attachments for folder: ' . $fid);
                     $attachments = self::getAttachmentsByFolderId($fid, array(
                         'orderby' => $args['orderby'],
                         'order' => $args['order'],
                         'limit' => -1, // Get all from each folder
                         'include_metadata' => $args['include_metadata']
                     ));
+                    error_log('FileBird FD Debug - Found ' . count($attachments) . ' attachments in folder ' . $fid);
                     $all_attachments = array_merge($all_attachments, $attachments);
                 }
+                
+                error_log('FileBird FD Debug - Total attachments collected: ' . count($all_attachments));
                 
                 // Sort and limit the combined results
                 if ($args['limit'] > 0) {
@@ -263,11 +287,15 @@ class FileBird_FD_Helper {
                 return $all_attachments;
             }
         } else {
+            error_log('FileBird FD Debug - Not including subfolders, getting direct folder attachments');
             // Check if the main folder is excluded
             if (!empty($args['exclude_folders']) && in_array($folder_id, $args['exclude_folders'])) {
+                error_log('FileBird FD Debug - Main folder is excluded');
                 return array();
             }
-            return self::getAttachmentsByFolderId($folder_id, $args);
+            $attachments = self::getAttachmentsByFolderId($folder_id, $args);
+            error_log('FileBird FD Debug - Found ' . count($attachments) . ' attachments in main folder');
+            return $attachments;
         }
     }
 
@@ -426,9 +454,14 @@ class FileBird_FD_Helper {
         
         $args = wp_parse_args($args, $defaults);
         
+        error_log('FileBird FD Debug - getAttachmentsByFolderId called for folder: ' . $folder_id);
+        error_log('FileBird FD Debug - args: ' . print_r($args, true));
+        
         $attachment_ids = self::getAttachmentIdsByFolderId($folder_id);
+        error_log('FileBird FD Debug - Found ' . count($attachment_ids) . ' attachment IDs for folder ' . $folder_id);
         
         if (empty($attachment_ids)) {
+            error_log('FileBird FD Debug - No attachment IDs found for folder ' . $folder_id);
             return array();
         }
         
@@ -441,7 +474,10 @@ class FileBird_FD_Helper {
             'posts_per_page' => $args['limit']
         );
         
+        error_log('FileBird FD Debug - Query args: ' . print_r($query_args, true));
+        
         $attachments = get_posts($query_args);
+        error_log('FileBird FD Debug - get_posts returned ' . count($attachments) . ' attachments');
         
         if (!$args['include_metadata']) {
             return $attachments;
@@ -457,6 +493,7 @@ class FileBird_FD_Helper {
             $attachment->medium_url = wp_get_attachment_image_url($attachment->ID, 'medium');
         }
         
+        error_log('FileBird FD Debug - Returning ' . count($attachments) . ' attachments with metadata');
         return $attachments;
     }
     
